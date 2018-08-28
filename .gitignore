@@ -73,9 +73,6 @@ build/*
 *.a
 *.class
 *.jar
-/intermediate
-/debug
-/release
 
 # tessdata
 *.traineddata

@@ -71,23 +71,10 @@
   </ImportGroup>
   <Import Project="native.props" />
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;HAVE_CONFIG_H;WINDLLNAME="Genix.Tesseract.Native.dll";GRAPHICS_DISABLED;TESS_EXPORTS;LIBLEPT_IMPORTS</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;$(ProjectDir)..\..\leptonica\src;$(ProjectDir)..\..\leptonica\src\vs2017;..\src\arch;..\src\ccmain;..\src\ccstruct;..\src\ccutil;..\src\classify;..\src\cutil;..\src\dict;..\src\lstm;..\src\opencl;..\src\textord;..\src\viewer;..\src\vs2010\port;..\src\wordrec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4244;6001;6011;6029;6031;6054;6237;6246;6287;6297;6323;6326;6330;6340;6385;6386;6387;28182;28183;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
     </Link>
@@ -96,7 +83,6 @@
     <ClCompile>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;HAVE_CONFIG_H;WINDLLNAME="Genix.Tesseract.Native.dll";GRAPHICS_DISABLED;TESS_EXPORTS;LIBLEPT_IMPORTS</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;$(ProjectDir)..\..\leptonica\src;$(ProjectDir)..\..\leptonica\src\vs2017;..\src\arch;..\src\ccmain;..\src\ccstruct;..\src\ccutil;..\src\classify;..\src\cutil;..\src\dict;..\src\lstm;..\src\opencl;..\src\textord;..\src\viewer;..\src\vs2010\port;..\src\wordrec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4244;6001;6011;6029;6031;6054;6237;6246;6287;6297;6323;6326;6330;6340;6385;6386;6387;28182;28183;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
     </Link>
@@ -105,7 +91,6 @@
     <ClCompile>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;HAVE_CONFIG_H;WINDLLNAME="Genix.Tesseract.Native.dll";GRAPHICS_DISABLED;TESS_EXPORTS;LIBLEPT_IMPORTS</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;$(ProjectDir)..\..\leptonica\src;$(ProjectDir)..\..\leptonica\src\vs2017;..\src\arch;..\src\ccmain;..\src\ccstruct;..\src\ccutil;..\src\classify;..\src\cutil;..\src\dict;..\src\lstm;..\src\opencl;..\src\textord;..\src\viewer;..\src\vs2010\port;..\src\wordrec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4244;6001;6011;6029;6031;6054;6237;6246;6287;6297;6323;6326;6330;6340;6385;6386;6387;28182;28183;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
     </Link>
@@ -114,7 +99,6 @@
     <ClCompile>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;HAVE_CONFIG_H;WINDLLNAME="Genix.Tesseract.Native.dll";GRAPHICS_DISABLED;TESS_EXPORTS;LIBLEPT_IMPORTS</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;$(ProjectDir)..\..\leptonica\src;$(ProjectDir)..\..\leptonica\src\vs2017;..\src\arch;..\src\ccmain;..\src\ccstruct;..\src\ccutil;..\src\classify;..\src\cutil;..\src\dict;..\src\lstm;..\src\opencl;..\src\textord;..\src\viewer;..\src\vs2010\port;..\src\wordrec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4244;6001;6011;6029;6031;6054;6237;6246;6287;6297;6323;6326;6330;6340;6385;6386;6387;28182;28183;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
     </Link>
