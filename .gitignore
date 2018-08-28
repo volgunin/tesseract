@@ -27,7 +27,7 @@ configure
 libtool
 stamp-h1
 tesseract.pc
-config_auto.h
+/src/*/config_auto.h
 /doc/html/*
 /doc/*.1
 /doc/*.5
@@ -73,6 +73,9 @@ build/*
 *.a
 *.class
 *.jar
+/intermediate
+/debug
+/release
 
 # tessdata
 *.traineddata

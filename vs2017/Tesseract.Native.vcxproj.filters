@@ -1,0 +1,781 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="..\src\api\baseapi.cpp">
+      <Filter>Tesseract\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\capi.cpp">
+      <Filter>Tesseract\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\pdfrenderer.cpp">
+      <Filter>Tesseract\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\renderer.cpp">
+      <Filter>Tesseract\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\tesseractmain.cpp">
+      <Filter>Tesseract\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\dotproductavx.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\dotproductsse.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\intsimdmatrix.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\intsimdmatrixavx2.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\intsimdmatrixsse.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arch\simddetect.cpp">
+      <Filter>Tesseract\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\adaptions.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\applybox.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\control.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\docqual.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\equationdetect.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\fixspace.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\fixxht.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\linerec.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\ltrresultiterator.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\osdetect.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\output.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\pageiterator.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\pagesegmain.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\par_control.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\paragraphs.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\paramsd.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\pgedit.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\recogtraining.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\reject.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\resultiterator.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\superscript.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\tessbox.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\tessedit.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\tesseractclass.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\tessvars.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\tfacepp.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\thresholder.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccmain\werdit.cpp">
+      <Filter>Tesseract\ccmain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\blamer.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\blobbox.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\blobs.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\blread.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\boxread.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\boxword.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\ccstruct.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\coutln.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\detlinefit.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\dppoint.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\fontinfo.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\genblob.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\imagedata.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\linlsq.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\matrix.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\mod128.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\normalis.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\ocrblock.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\ocrpara.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\ocrrow.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\otsuthr.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\pageres.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\params_training_featdef.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\pdblock.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\points.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\polyaprx.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\polyblk.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\publictypes.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\quadlsq.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\quspline.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\ratngs.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\rect.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\rejctmap.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\seam.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\split.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\statistc.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\stepblob.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\vecfuncs.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccstruct\werd.cpp">
+      <Filter>Tesseract\ccstruct</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\context.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\dawg.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\dawg_cache.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\dict.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\hyphen.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\permdawg.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\stopper.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dict\trie.cpp">
+      <Filter>Tesseract\dict</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\convolve.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\ctc.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\fullyconnected.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\functions.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\input.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\lstm.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\lstmrecognizer.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\lstmtrainer.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\maxpool.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\network.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\networkbuilder.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\networkio.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\parallel.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\plumbing.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\recodebeam.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\reconfig.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\reversed.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\series.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\stridemap.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\tfnetwork.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lstm\weightmatrix.cpp">
+      <Filter>Tesseract\lstm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\associate.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\chop.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\chopper.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\drawfx.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\findseam.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\gradechop.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\language_model.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\lm_consistency.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\lm_pain_points.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\lm_state.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\outlines.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\params_model.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\pieces.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\plotedges.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\render.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\segsearch.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\tface.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\wordclass.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wordrec\wordrec.cpp">
+      <Filter>Tesseract\wordrec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\ambigs.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\basedir.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\bitvector.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\ccutil.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\clst.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\elst.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\elst2.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\errcode.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\globaloc.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\indexmapbidi.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\mainblk.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\params.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\scanutils.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\serialis.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\strngs.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\tessdatamanager.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\tprintf.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\unichar.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\unicharcompress.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\unicharmap.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\unicharset.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\unicodes.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccutil\universalambigs.cpp">
+      <Filter>Tesseract\ccutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\adaptive.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\adaptmatch.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\blobclass.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\classify.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\cluster.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\clusttool.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\cutoffs.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\errorcounter.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\featdefs.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\float2int.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\fpoint.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intfeaturedist.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intfeaturemap.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intfeaturespace.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intfx.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intmatcher.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\intproto.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\kdtree.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\mastertrainer.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\mf.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\mfdefs.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\mfoutline.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\mfx.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\normfeat.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\normmatch.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\ocrfeatures.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\outfeat.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\picofeat.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\protos.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\sampleiterator.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\shapeclassifier.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\shapetable.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\tessclassifier.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\trainingsample.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\classify\trainingsampleset.cpp">
+      <Filter>Tesseract\classify</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\alignedblob.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\baselinedetect.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\bbgrid.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\blkocc.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\blobgrid.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\ccnontextdetect.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\cjkpitch.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\colfind.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\colpartition.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\colpartitiongrid.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\colpartitionset.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\devanagari_processing.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\drawedg.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\drawtord.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\edgblob.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\edgloop.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\equationdetectbase.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\fpchop.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\gap_map.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\imagefind.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\linefind.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\makerow.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\oldbasel.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\pithsync.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\pitsync1.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\scanedg.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\sortflts.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\strokewidth.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tabfind.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tablefind.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tablerecog.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tabvector.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\textlineprojection.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\textord.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\topitch.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tordmain.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tospace.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\tovars.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\underlin.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\wordseg.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\textord\workingpartset.cpp">
+      <Filter>Tesseract\textord</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\viewer\scrollview.cpp">
+      <Filter>Tesseract\viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\viewer\svmnode.cpp">
+      <Filter>Tesseract\viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\viewer\svpaint.cpp">
+      <Filter>Tesseract\viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\viewer\svutil.cpp">
+      <Filter>Tesseract\viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\bitvec.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\callcpp.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\cutil_class.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\emalloc.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\oldlist.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cutil\structures.cpp">
+      <Filter>Tesseract\cutil</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vs2010\port\gettimeofday.cpp">
+      <Filter>Tesseract\vs2010\port</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\api\apitypes.h">
+      <Filter>Tesseract\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\baseapi.h">
+      <Filter>Tesseract\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\capi.h">
+      <Filter>Tesseract\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\renderer.h">
+      <Filter>Tesseract\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\tess_version.h">
+      <Filter>Tesseract\api</Filter>
+    </ClInclude>
+    <ClInclude Include="config_auto.h" />
+    <ClInclude Include="tess_version.h" />
+    <ClInclude Include="endianness.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Tesseract">
+      <UniqueIdentifier>{61fc0dc5-8bcb-46c8-9095-3495a60c92e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\api">
+      <UniqueIdentifier>{3b4180de-cb4b-482c-976d-a366bd623318}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\arch">
+      <UniqueIdentifier>{8504cc12-0667-4c5d-9bba-cfa9a8e8100b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\ccmain">
+      <UniqueIdentifier>{11a2e30e-953c-4272-9674-af6473d31488}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\ccstruct">
+      <UniqueIdentifier>{cba636fd-e697-439c-9500-d65384542abb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\dict">
+      <UniqueIdentifier>{359cec64-e54d-4406-b586-5a6f086d9fae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\lstm">
+      <UniqueIdentifier>{6da62c6e-e520-4f06-b050-dc2f54e929a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\wordrec">
+      <UniqueIdentifier>{75ed3d99-c703-479b-8398-cc49b35f339a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\ccutil">
+      <UniqueIdentifier>{ae7c955e-5196-4b51-9b36-13540d0e8d4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\classify">
+      <UniqueIdentifier>{b5f89515-ae9c-4f8d-980c-223b9e4865d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\textord">
+      <UniqueIdentifier>{69cd47f3-6037-4ffb-8e19-ff8736e46568}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\viewer">
+      <UniqueIdentifier>{dc345a23-03be-482a-aa76-9a190b09003a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\cutil">
+      <UniqueIdentifier>{0ba74973-9e5c-497e-afc0-b016c4c83265}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\vs2010">
+      <UniqueIdentifier>{fed19631-aa55-4a98-8a53-241120239fda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tesseract\vs2010\port">
+      <UniqueIdentifier>{34ed366a-1240-42bf-8e0b-445d47bf05f7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
