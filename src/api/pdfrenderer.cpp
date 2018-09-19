@@ -23,9 +23,9 @@
 #include <memory>  // std::unique_ptr
 #include "allheaders.h"
 #include "baseapi.h"
-#include "math.h"
+#include <cmath>
 #include "renderer.h"
-#include "strngs.h"
+#include <cstring>
 #include "tprintf.h"
 
 /*
@@ -181,11 +181,12 @@ static const int kMaxBytesPerCodepoint = 20;
  **********************************************************************/
 
 TessPDFRenderer::TessPDFRenderer(const char *outputbase, const char *datadir,
-                                 bool textonly)
+                                 bool textonly, int jpg_quality)
     : TessResultRenderer(outputbase, "pdf"),
       datadir_(datadir) {
   obj_  = 0;
   textonly_ = textonly;
+  jpg_quality_ = jpg_quality;
   offsets_.push_back(0);
 }
 
@@ -699,7 +700,7 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
                                     const char* filename,
                                     long int objnum,
                                     char **pdf_object,
-                                    long int *pdf_object_size) {
+                                    long int *pdf_object_size, int jpg_quality) {
   size_t n;
   char b0[kBasicBufSize];
   char b1[kBasicBufSize];
@@ -712,15 +713,18 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
     return false;
 
   L_Compressed_Data *cid = nullptr;
-  const int kJpegQuality = 85;
+  const int kJpegQuality = jpg_quality;
 
   int format, sad;
-  findFileFormat(filename, &format);
-  if (pixGetSpp(pix) == 4 && format == IFF_PNG) {
-    Pix *p1 = pixAlphaBlendUniform(pix, 0xffffff00);
-    sad = pixGenerateCIData(p1, L_FLATE_ENCODE, 0, 0, &cid);
-    pixDestroy(&p1);
-  } else {
+  if (filename) {
+    findFileFormat(filename, &format);
+    if (pixGetSpp(pix) == 4 && format == IFF_PNG) {
+      Pix *p1 = pixAlphaBlendUniform(pix, 0xffffff00);
+      sad = pixGenerateCIData(p1, L_FLATE_ENCODE, 0, 0, &cid);
+      pixDestroy(&p1);
+    }
+  }
+  if (!cid) {
     sad = l_generateCIDataForPdf(filename, pix, kJpegQuality, &cid);
   }
 
@@ -912,7 +916,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize)) {
+    if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality_)) {
       return false;
     }
     AppendData(pdf_object, objsize);
