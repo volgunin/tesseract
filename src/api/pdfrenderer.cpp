@@ -179,14 +179,12 @@ static const int kMaxBytesPerCodepoint = 20;
 /**********************************************************************
  * PDF Renderer interface implementation
  **********************************************************************/
-
 TessPDFRenderer::TessPDFRenderer(const char *outputbase, const char *datadir,
-                                 bool textonly, int jpg_quality)
+                                 bool textonly)
     : TessResultRenderer(outputbase, "pdf"),
       datadir_(datadir) {
   obj_  = 0;
   textonly_ = textonly;
-  jpg_quality_ = jpg_quality;
   offsets_.push_back(0);
 }
 
@@ -307,7 +305,7 @@ static void ClipBaseline(int ppi, int x1, int y1, int x2, int y2,
     *line_y1 = *line_y2 = (y1 + y2) / 2;
 }
 
-bool CodepointToUtf16be(int code, char utf16[kMaxBytesPerCodepoint]) {
+static bool CodepointToUtf16be(int code, char utf16[kMaxBytesPerCodepoint]) {
   if ((code > 0xD7FF && code < 0xE000) || code > 0x10FFFF) {
     tprintf("Dropping invalid codepoint %d\n", code);
     return false;
@@ -472,7 +470,7 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
       }
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
-    if (word_length > 0 && pdf_word_len > 0 && fontsize > 0) {
+    if (word_length > 0 && pdf_word_len > 0) {
       double h_stretch =
           kCharWidth * prec(100.0 * word_length / (fontsize * pdf_word_len));
       pdf_str.add_str_double("", h_stretch);
@@ -700,7 +698,8 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
                                     const char* filename,
                                     long int objnum,
                                     char **pdf_object,
-                                    long int *pdf_object_size, int jpg_quality) {
+                                    long int* pdf_object_size,
+                                    const int jpg_quality) {
   size_t n;
   char b0[kBasicBufSize];
   char b1[kBasicBufSize];
@@ -709,23 +708,16 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
     return false;
   *pdf_object = nullptr;
   *pdf_object_size = 0;
-  if (!filename)
+  if (!filename && !pix)
     return false;
 
   L_Compressed_Data *cid = nullptr;
-  const int kJpegQuality = jpg_quality;
 
-  int format, sad;
-  if (filename) {
-    findFileFormat(filename, &format);
-    if (pixGetSpp(pix) == 4 && format == IFF_PNG) {
-      Pix *p1 = pixAlphaBlendUniform(pix, 0xffffff00);
-      sad = pixGenerateCIData(p1, L_FLATE_ENCODE, 0, 0, &cid);
-      pixDestroy(&p1);
-    }
-  }
+  int sad = 0;
+  if (pixGetInputFormat(pix) == IFF_PNG)
+    sad = pixGenerateCIData(pix, L_FLATE_ENCODE, 0, 0, &cid);
   if (!cid) {
-    sad = l_generateCIDataForPdf(filename, pix, kJpegQuality, &cid);
+    sad = l_generateCIDataForPdf(filename, pix, jpg_quality, &cid);
   }
 
   if (sad || !cid) {
@@ -849,7 +841,7 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
   char buf[kBasicBufSize];
   char buf2[kBasicBufSize];
   Pix *pix = api->GetInputImage();
-  const char* filename = reinterpret_cast<const char*>(api->GetInputName());
+  const char* filename = api->GetInputName();
   int ppi = api->GetSourceYResolution();
   if (!pix || ppi <= 0)
     return false;
@@ -916,7 +908,10 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
 
   if (!textonly_) {
     char *pdf_object = nullptr;
-    if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize, jpg_quality_)) {
+    int jpg_quality;
+    api->GetIntVariable("jpg_quality", &jpg_quality);
+    if (!imageToPDFObj(pix, filename, obj_, &pdf_object, &objsize,
+                       jpg_quality)) {
       return false;
     }
     AppendData(pdf_object, objsize);

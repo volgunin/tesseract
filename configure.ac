@@ -88,7 +88,7 @@ case "${host_os}" in
         ;;
     cygwin*)
         AM_CONDITIONAL([ADD_RT], false)
-        AC_SUBST([AM_LDFLAGS], ['-Wl,-no-undefined -Wl,--as-needed'])
+        AC_SUBST([NOUNDEFINED], ['-no-undefined'])
         ;;
     solaris*)
         LIBS="-lsocket -lnsl -lrt -lxnet"
@@ -500,6 +500,7 @@ echo "You can now build and install $PACKAGE_NAME by running:"
 echo ""
 echo "$ make"
 echo "$ sudo make install"
+echo "$ sudo ldconfig"
 echo ""
 
 AM_COND_IF([ASCIIDOC],

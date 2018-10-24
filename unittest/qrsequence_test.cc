@@ -1,9 +1,22 @@
-//
+// (C) Copyright 2017, Google Inc.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include "tesseract/ccutil/qrsequence.h"
 
 #include <algorithm>
 #include <vector>
+
+#include "cycletimer.h"
+#include "include_gunit.h"
+#include "log.h"
+#include "qrsequence.h"
 
 namespace {
 
@@ -18,14 +31,13 @@ class TestableQRSequenceGenerator : public QRSequenceGenerator {
 TEST(QRSequenceGenerator, GetBinaryReversedInteger) {
   const int kRangeSize = 8;
   TestableQRSequenceGenerator generator(kRangeSize);
-  int reversed_vals[kRangeSize] = { 0, 4, 2, 6, 1, 5, 3, 7};
+  int reversed_vals[kRangeSize] = {0, 4, 2, 6, 1, 5, 3, 7};
   for (int i = 0; i < kRangeSize; ++i)
     EXPECT_EQ(reversed_vals[i], generator.GetBinaryReversedInteger(i));
 }
 
 // Trivial test fixture for a parameterized test.
-class QRSequenceGeneratorTest : public ::testing::TestWithParam<int> {
-};
+class QRSequenceGeneratorTest : public ::testing::TestWithParam<int> {};
 
 TEST_P(QRSequenceGeneratorTest, GeneratesValidSequence) {
   const int kRangeSize = GetParam();
@@ -33,10 +45,8 @@ TEST_P(QRSequenceGeneratorTest, GeneratesValidSequence) {
   std::vector<int> vals(kRangeSize);
   CycleTimer timer;
   timer.Restart();
-  for (int i = 0; i < kRangeSize; ++i)
-    vals[i] = generator.GetVal();
-  LOG(INFO) << kRangeSize << "-length sequence took " << timer.Get() * 1e3
-            << "ms";
+  for (int i = 0; i < kRangeSize; ++i) vals[i] = generator.GetVal();
+  LOG(INFO) << kRangeSize << "-length sequence took " << timer.GetInMs() << "ms";
   // Sort the numbers to verify that we've covered the range without repetition.
   std::sort(vals.begin(), vals.end());
   for (int i = 0; i < kRangeSize; ++i) {

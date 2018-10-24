@@ -31,12 +31,11 @@
 #include "environ.h"     // for l_uint32
 #include "helpers.h"     // for UpdateRange, IntCastRounded
 #include "host.h"        // for NearlyEqual, TRUE
-#include "ipoints.h"     // for operator+=, ICOORD::rotate
+#include "points.h"      // for operator+=, ICOORD::rotate
 
 struct Pix;
 
 #define PROJECTION_MARGIN 10     //arbitrary
-#define EXTERN
 
 ELISTIZE(BLOBNBOX)
 ELIST2IZE(TO_ROW)
