@@ -173,7 +173,6 @@ include_directories(src/dict)
 include_directories(src/lstm)
 include_directories(src/opencl)
 include_directories(src/textord)
-include_directories(src/vs2010/port)
 include_directories(src/viewer)
 include_directories(src/wordrec)
 
@@ -210,12 +209,6 @@ file(GLOB tesseract_hdr
     src/viewer/*.h
     src/wordrec/*.h
 )
-if (WIN32)
-    file(GLOB tesseract_win32_src "src/vs2010/port/*.cpp")
-    file(GLOB tesseract_win32_hdr "src/vs2010/port/*.h")
-    set(tesseract_src ${tesseract_src} ${tesseract_win32_src})
-    set(tesseract_hdr ${tesseract_hdr} ${tesseract_win32_hdr})
-endif()
 
 set(tesseract_src ${tesseract_src}
     src/api/baseapi.cpp
@@ -304,8 +297,6 @@ target_link_libraries           (tesseract libtesseract)
 
 if (BUILD_TESTS AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt)
     add_subdirectory(googletest)
-    add_executable(tesseract_tests tests/tesseracttests.cpp)
-    target_link_libraries(tesseract_tests gtest_main)
 endif()
 
 if (BUILD_TRAINING_TOOLS)
