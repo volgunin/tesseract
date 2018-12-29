@@ -25,6 +25,8 @@
 #include "genericvector.h"
 #include "platform.h"
 
+struct Pix;
+
 namespace tesseract {
 
 class TessBaseAPI;
@@ -165,6 +167,20 @@ class TESS_API TessHOcrRenderer : public TessResultRenderer {
  private:
   bool font_info_;  // whether to print font information
 };
+
+/**
+ * Renders tesseract output into an alto text string
+ */
+    class TESS_API TessAltoRenderer : public TessResultRenderer {
+    public:
+        explicit TessAltoRenderer(const char *outputbase);
+
+    protected:
+        virtual bool BeginDocumentHandler();
+        virtual bool AddImageHandler(TessBaseAPI* api);
+        virtual bool EndDocumentHandler();
+
+    };
 
 /**
  * Renders Tesseract output into a TSV string

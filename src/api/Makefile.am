@@ -32,7 +32,11 @@ libtesseract_api_la_CPPFLAGS = $(AM_CPPFLAGS)
 if VISIBILITY
 libtesseract_api_la_CPPFLAGS += -DTESS_EXPORTS
 endif
-libtesseract_api_la_SOURCES = baseapi.cpp capi.cpp renderer.cpp pdfrenderer.cpp
+libtesseract_api_la_SOURCES = baseapi.cpp capi.cpp
+libtesseract_api_la_SOURCES += altorenderer.cpp
+libtesseract_api_la_SOURCES += hocrrenderer.cpp
+libtesseract_api_la_SOURCES += pdfrenderer.cpp
+libtesseract_api_la_SOURCES += renderer.cpp
 
 lib_LTLIBRARIES += libtesseract.la
 libtesseract_la_LDFLAGS = $(LEPTONICA_LIBS) $(OPENCL_LDFLAGS)
@@ -48,6 +52,7 @@ libtesseract_la_LIBADD = \
     ../classify/libtesseract_classify.la \
     ../dict/libtesseract_dict.la \
     ../arch/libtesseract_arch.la \
+    ../arch/libtesseract_native.la \
     ../arch/libtesseract_avx.la \
     ../arch/libtesseract_avx2.la \
     ../arch/libtesseract_sse.la \

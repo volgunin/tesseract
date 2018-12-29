@@ -66,6 +66,11 @@ TESS_API TessResultRenderer* TESS_CALL TessHOcrRendererCreate2(const char* outpu
     return new TessHOcrRenderer(outputbase, font_info);
 }
 
+TESS_API TessResultRenderer* TESS_CALL TessAltoRendererCreate(const char* outputbase)
+{
+    return new TessAltoRenderer(outputbase);
+}
+
 TESS_API TessResultRenderer* TESS_CALL TessPDFRendererCreate(const char* outputbase, const char* datadir,
                                                              BOOL textonly)
 {
@@ -478,6 +483,11 @@ TESS_API char* TESS_CALL TessBaseAPIGetUTF8Text(TessBaseAPI* handle)
 TESS_API char* TESS_CALL TessBaseAPIGetHOCRText(TessBaseAPI* handle, int page_number)
 {
     return handle->GetHOCRText(nullptr, page_number);
+}
+
+TESS_API char* TESS_CALL TessBaseAPIGetAltoText(TessBaseAPI* handle, int page_number)
+{
+    return handle->GetAltoText(page_number);
 }
 
 TESS_API char* TESS_CALL TessBaseAPIGetBoxText(TessBaseAPI* handle, int page_number)

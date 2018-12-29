@@ -2,7 +2,6 @@
 // File:        weightmatrix.h
 // Description: Hides distinction between float/int implementations.
 // Author:      Ray Smith
-// Created:     Tue Jun 17 09:05:39 PST 2014
 //
 // (C) Copyright 2014, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,23 +151,10 @@ class WeightMatrix {
 
   void Debug2D(const char* msg);
 
-  // Computes and returns the dot product of the two n-vectors u and v.
-  static double DotProduct(const double* u, const double* v, int n);
   // Utility function converts an array of float to the corresponding array
   // of double.
   static void FloatToDouble(const GENERIC_2D_ARRAY<float>& wf,
                             GENERIC_2D_ARRAY<double>* wd);
-
- private:
-  // Computes matrix.vector v = Wu.
-  // u is of size starts.back()+extents.back() and the output v is of size
-  // starts.size().
-  // The weight matrix w, is of size starts.size()xMAX(extents)+add_bias_fwd.
-  // If add_bias_fwd, an extra element at the end of w[i] is the bias weight
-  // and is added to v[i].
-  static void MatrixDotVectorInternal(const GENERIC_2D_ARRAY<double>& w,
-                                      bool add_bias_fwd, bool skip_bias_back,
-                                      const double* u, double* v);
 
  private:
   // Choice between float and 8 bit int implementations.

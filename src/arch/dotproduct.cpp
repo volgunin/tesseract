@@ -1,9 +1,8 @@
 ///////////////////////////////////////////////////////////////////////
-// File:        intsindmatrixsse.h
-// Description: SSE implementation of 8-bit int SIMD matrix multiply.
-// Author:      Ray Smith
+// File:        dotproduct.h
+// Description: Native dot product function.
 //
-// (C) Copyright 2017, Google Inc.
+// (C) Copyright 2018, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,19 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
-#ifndef TESSERACT_ARCH_INTSIMDMATRIXSSE_H_
-#define TESSERACT_ARCH_INTSIMDMATRIXSSE_H_
 
-#include "intsimdmatrix.h"
+#include "dotproduct.h"
 
 namespace tesseract {
 
-// SSE implementation of IntSimdMatrix.
-class IntSimdMatrixSSE : public IntSimdMatrix {
- public:
-  IntSimdMatrixSSE();
-};
+// Computes and returns the dot product of the two n-vectors u and v.
+double DotProductNative(const double* u, const double* v, int n) {
+  double total = 0.0;
+  for (int k = 0; k < n; ++k) total += u[k] * v[k];
+  return total;
+}
 
 }  // namespace tesseract
-
-#endif  // TESSERACT_ARCH_INTSIMDMATRIXSSE_H_

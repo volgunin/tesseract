@@ -1,8 +1,7 @@
 /**********************************************************************
- * File:        tesseractmain.cpp  (Formerly tessedit.c)
+ * File:        tesseractmain.cpp
  * Description: Main program for merge of tess and editor.
  * Author:      Ray Smith
- * Created:     Tue Jan 07 15:21:46 GMT 1992
  *
  * (C) Copyright 1992, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +34,10 @@
 #include "simddetect.h"
 #include "strngs.h"
 #include "tprintf.h"            // for tprintf
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #if defined(_WIN32)
 #include <fcntl.h>
@@ -108,13 +111,17 @@ static void PrintVersionInfo() {
         }
       }
     }
-    }
+  }
 #endif
-    if (SIMDDetect::IsAVX512BWAvailable()) printf(" Found AVX512BW\n");
-    if (SIMDDetect::IsAVX512FAvailable()) printf(" Found AVX512F\n");
-    if (SIMDDetect::IsAVX2Available()) printf(" Found AVX2\n");
-    if (SIMDDetect::IsAVXAvailable()) printf(" Found AVX\n");
-    if (SIMDDetect::IsSSEAvailable()) printf(" Found SSE\n");
+  if (tesseract::SIMDDetect::IsAVX512BWAvailable()) printf(" Found AVX512BW\n");
+  if (tesseract::SIMDDetect::IsAVX512FAvailable()) printf(" Found AVX512F\n");
+  if (tesseract::SIMDDetect::IsAVX2Available()) printf(" Found AVX2\n");
+  if (tesseract::SIMDDetect::IsAVXAvailable()) printf(" Found AVX\n");
+  if (tesseract::SIMDDetect::IsSSEAvailable()) printf(" Found SSE\n");
+#ifdef _OPENMP
+  printf(" Found OpenMP %d\n", _OPENMP);
+#endif
+
 }
 
 static void PrintHelpForPSM() {
@@ -403,6 +410,7 @@ static void PreloadRenderers(
     renderers->push_back(new tesseract::TessOsdRenderer(outputbase));
 #endif  // ndef DISABLED_LEGACY_ENGINE
   } else {
+    bool error = false;
     bool b;
     api->GetBoolVariable("tessedit_create_hocr", &b);
     if (b) {
@@ -416,6 +424,21 @@ static void PreloadRenderers(
         delete renderer;
         tprintf("Error, could not create hOCR output file: %s\n",
                 strerror(errno));
+        error = true;
+      }
+    }
+
+    api->GetBoolVariable("tessedit_create_alto", &b);
+    if (b) {
+      tesseract::TessAltoRenderer* renderer =
+              new tesseract::TessAltoRenderer(outputbase);
+      if (renderer->happy()) {
+        renderers->push_back(renderer);
+      } else {
+        delete renderer;
+        tprintf("Error, could not create ALTO output file: %s\n",
+                strerror(errno));
+        error = true;
       }
     }
 
@@ -431,6 +454,7 @@ static void PreloadRenderers(
         delete renderer;
         tprintf("Error, could not create TSV output file: %s\n",
                 strerror(errno));
+        error = true;
       }
     }
 
@@ -451,6 +475,7 @@ static void PreloadRenderers(
         delete renderer;
         tprintf("Error, could not create PDF output file: %s\n",
                 strerror(errno));
+        error = true;
       }
     }
 
@@ -465,6 +490,7 @@ static void PreloadRenderers(
         delete renderer;
         tprintf("Error, could not create UNLV output file: %s\n",
                 strerror(errno));
+        error = true;
       }
     }
 
@@ -478,11 +504,12 @@ static void PreloadRenderers(
         delete renderer;
         tprintf("Error, could not create BOX output file: %s\n",
                 strerror(errno));
+        error = true;
       }
     }
 
     api->GetBoolVariable("tessedit_create_txt", &b);
-    if (b || renderers->empty()) {
+    if (b || !error && renderers->empty()) {
       tesseract::TessTextRenderer* renderer =
         new tesseract::TessTextRenderer(outputbase);
       if (renderer->happy()) {
@@ -572,6 +599,9 @@ int main(int argc, char** argv) {
 
   SetVariablesFromCLArgs(&api, argc, argv);
 
+  // SIMD settings might be overridden by config variable.
+  tesseract::SIMDDetect::Update();
+
   if (list_langs) {
     PrintLangsList(&api);
     return EXIT_SUCCESS;
@@ -652,7 +682,7 @@ int main(int argc, char** argv) {
       osd_warning +=
           "\nWarning: The page segmentation mode 1 (Auto+OSD) is currently disabled. "
           "Using PSM 3 (Auto) instead.\n\n";
-  } else if (tesseract::PSM_SPARSE_TEXT_OSD) {
+  } else if (cur_psm == tesseract::PSM_SPARSE_TEXT_OSD) {
       api.SetPageSegMode(tesseract::PSM_SPARSE_TEXT);
       osd_warning +=
           "\nWarning: The page segmentation mode 12 (Sparse text + OSD) is currently disabled. "
@@ -693,4 +723,3 @@ int main(int argc, char** argv) {
 
   return EXIT_SUCCESS;
 }
-
