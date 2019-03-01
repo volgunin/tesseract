@@ -4,14 +4,21 @@ LANGDATA_DIR=$(shell cd $(top_srcdir) && cd .. && pwd)/langdata_lstm
 # Absolute path of directory 'tessdata' with traineddata files
 # (must be on same level as top source directory).
 TESSDATA_DIR=$(shell cd $(top_srcdir) && cd .. && pwd)/tessdata
+TESSDATA_BEST_DIR=$(shell cd $(top_srcdir) && cd .. && pwd)/tessdata_best
 
 # Absolute path of directory 'testing' with test images and ground truth texts
 # (using submodule test).
 TESTING_DIR=$(shell cd $(top_srcdir) && pwd)/test/testing
+# Absolute path of directory 'testdata' with test unicharset etc.
+# (using submodule test).
+TESTDATA_DIR=$(shell cd $(top_srcdir) && pwd)/test/testdata
 
+AM_CPPFLAGS += -DTESSBIN_DIR="\"$(abs_top_builddir)\""
 AM_CPPFLAGS += -DLANGDATA_DIR="\"$(LANGDATA_DIR)\""
 AM_CPPFLAGS += -DTESSDATA_DIR="\"$(TESSDATA_DIR)\""
+AM_CPPFLAGS += -DTESSDATA_BEST_DIR="\"$(TESSDATA_BEST_DIR)\""
 AM_CPPFLAGS += -DTESTING_DIR="\"$(TESTING_DIR)\""
+AM_CPPFLAGS += -DTESTDATA_DIR="\"$(TESTDATA_DIR)\""
 AM_CPPFLAGS += -DPANGO_ENABLE_ENGINE
 AM_CPPFLAGS += -I$(top_builddir)/src/api
 AM_CPPFLAGS += -I$(top_srcdir)/src/api
@@ -25,6 +32,8 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/dict
 AM_CPPFLAGS += -I$(top_srcdir)/src/display
 AM_CPPFLAGS += -I$(top_srcdir)/src/lstm
 AM_CPPFLAGS += -I$(top_srcdir)/src/textord
+AM_CPPFLAGS += -I$(top_srcdir)/unittest/base
+AM_CPPFLAGS += -I$(top_srcdir)/unittest/util
 if ENABLE_TRAINING
 AM_CPPFLAGS += -I$(top_srcdir)/src/training
 endif
@@ -82,7 +91,7 @@ libgmock_main_la_CPPFLAGS = $(GMOCK_INCLUDES) \
 
 # Build unittests
 ABSEIL_LIBS = libabseil.la
-GTEST_LIBS =  libgtest.la libgtest_main.la
+GTEST_LIBS =  libgtest.la libgtest_main.la -lpthread
 GMOCK_LIBS =  libgmock.la libgmock_main.la
 TESS_LIBS = $(top_builddir)/src/api/libtesseract.la
 TRAINING_LIBS = $(top_builddir)/src/training/libtesseract_training.la
@@ -97,6 +106,7 @@ check_PROGRAMS = \
   bitvector_test \
   cleanapi_test \
   colpartition_test \
+  dawg_test \
   denorm_test \
   fileio_test \
   heap_test \
@@ -105,6 +115,7 @@ check_PROGRAMS = \
   intfeaturemap_test \
   intsimdmatrix_test \
   lang_model_test \
+  layout_test \
   linlsq_test \
   loadlang_test \
   mastertrainer_test \
@@ -114,8 +125,12 @@ check_PROGRAMS = \
   paragraphs_test \
   progress_test \
   qrsequence_test \
+  recodebeam_test \
   rect_test \
+  resultiterator_test \
+  shapetable_test \
   stats_test \
+  stringrenderer_test \
   tablefind_test \
   tablerecog_test \
   tabvector_test \
@@ -123,6 +138,17 @@ check_PROGRAMS = \
 
 if ENABLE_TRAINING
 check_PROGRAMS += commandlineflags_test
+check_PROGRAMS += lstm_recode_test
+check_PROGRAMS += lstm_squashed_test
+check_PROGRAMS += lstm_test
+check_PROGRAMS += lstmtrainer_test
+check_PROGRAMS += unichar_test
+check_PROGRAMS += unicharcompress_test
+check_PROGRAMS += unicharset_test
+check_PROGRAMS += validate_grapheme_test
+check_PROGRAMS += validate_indic_test
+check_PROGRAMS += validate_khmer_test
+check_PROGRAMS += validate_myanmar_test
 check_PROGRAMS += validator_test
 endif
 
@@ -155,6 +181,9 @@ colpartition_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 commandlineflags_test_SOURCES = commandlineflags_test.cc
 commandlineflags_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
 
+dawg_test_SOURCES = dawg_test.cc
+dawg_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+
 denorm_test_SOURCES = denorm_test.cc
 denorm_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
@@ -175,15 +204,37 @@ intfeaturemap_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 intsimdmatrix_test_SOURCES = intsimdmatrix_test.cc
 intsimdmatrix_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+intsimdmatrix_test_CPPFLAGS = $(AM_CPPFLAGS)
+if AVX2_OPT
+intsimdmatrix_test_CPPFLAGS += -DAVX2
+endif
+if SSE41_OPT
+intsimdmatrix_test_CPPFLAGS += -DSSE4_1
+endif
 
 lang_model_test_SOURCES = lang_model_test.cc
 lang_model_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+layout_test_SOURCES = layout_test.cc
+layout_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)  $(LEPTONICA_LIBS)
 
 linlsq_test_SOURCES = linlsq_test.cc
 linlsq_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 loadlang_test_SOURCES = loadlang_test.cc
 loadlang_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
+
+lstm_recode_test_SOURCES = lstm_recode_test.cc
+lstm_recode_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+
+lstm_squashed_test_SOURCES = lstm_squashed_test.cc
+lstm_squashed_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+
+lstm_test_SOURCES = lstm_test.cc
+lstm_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+
+lstmtrainer_test_SOURCES = lstmtrainer_test.cc
+lstmtrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS)
 
 mastertrainer_test_SOURCES = mastertrainer_test.cc
 mastertrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS)
@@ -210,11 +261,23 @@ progress_test_LDADD = $(GTEST_LIBS) $(GMOCK_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 qrsequence_test_SOURCES = qrsequence_test.cc
 qrsequence_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
 
+recodebeam_test_SOURCES = recodebeam_test.cc
+recodebeam_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
 rect_test_SOURCES = rect_test.cc
 rect_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
+resultiterator_test_SOURCES = resultiterator_test.cc
+resultiterator_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+shapetable_test_SOURCES = shapetable_test.cc
+shapetable_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
+
 stats_test_SOURCES = stats_test.cc
 stats_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+
+stringrenderer_test_SOURCES = stringrenderer_test.cc
+stringrenderer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS) -lfontconfig -lpangocairo-1.0 -lpangoft2-1.0 $(cairo_LIBS) $(pango_LIBS)
 
 tablefind_test_SOURCES = tablefind_test.cc
 tablefind_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
@@ -227,6 +290,27 @@ tabvector_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 tfile_test_SOURCES = tfile_test.cc
 tfile_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+
+unichar_test_SOURCES = unichar_test.cc
+unichar_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+
+unicharcompress_test_SOURCES = unicharcompress_test.cc
+unicharcompress_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+
+unicharset_test_SOURCES = unicharset_test.cc
+unicharset_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+
+validate_grapheme_test_SOURCES = validate_grapheme_test.cc
+validate_grapheme_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+validate_indic_test_SOURCES = validate_indic_test.cc
+validate_indic_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+validate_khmer_test_SOURCES = validate_khmer_test.cc
+validate_khmer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+validate_myanmar_test_SOURCES = validate_myanmar_test.cc
+validate_myanmar_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 validator_test_SOURCES = validator_test.cc
 validator_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)

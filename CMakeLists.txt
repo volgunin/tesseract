@@ -8,7 +8,7 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 # In-source builds are disabled.
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -45,6 +45,14 @@ file(STRINGS "VERSION" VERSION_PLAIN)
 string(REGEX REPLACE "^([^.]*)\\..*" "\\1" VERSION_MAJOR ${VERSION_PLAIN})
 string(REGEX REPLACE "^[^.]*\\.([^.]*)\\..*" "\\1" VERSION_MINOR ${VERSION_PLAIN})
 string(REGEX REPLACE "^[^.]*\\.[^.]*\\.([0-9]*).*" "\\1" VERSION_PATCH ${VERSION_PLAIN})
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+    execute_process(COMMAND git describe --abbrev=4
+        OUTPUT_VARIABLE GIT_REV)
+        string(REGEX REPLACE "\n$" "" PACKAGE_VERSION "${GIT_REV}")
+endif()
+if(NOT PACKAGE_VERSION)
+    set(PACKAGE_VERSION ${VERSION_PLAIN})
+endif()
 
 # Provide also same macro names as autoconf (see configure.ac).
 set(GENERIC_MAJOR_VERSION ${VERSION_MAJOR})
@@ -55,9 +63,37 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 
 ###############################################################################
 #
+# options
+#
+###############################################################################
+message( "Configuring tesseract version ${PACKAGE_VERSION}...")
+
+option(CPPAN_BUILD "Build with cppan" ON)
+option(OPENMP_BUILD "Build with openmp support" OFF)  # see issue #1662
+option(BUILD_TRAINING_TOOLS "Build training tools" ON)
+option(BUILD_TESTS "Build tests" OFF)
+
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.cppan)
+    set(CPPAN_BUILD OFF)
+endif()
+
+###############################################################################
+#
 # compiler and linker
 #
 ###############################################################################
+
+# Check for C++ standard to use
+get_property(known_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
+if(cxx_std_14 IN_LIST known_features)
+    set(CMAKE_CXX_STANDARD 14)
+    message("C++14 support enabled...")
+else()  # minimum required standard
+    set(CMAKE_CXX_STANDARD 11)
+    message("C++11 support enabled...")
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(LIBRARY_TYPE SHARED)
 if (STATIC)
@@ -71,15 +107,21 @@ endif()
 if (WIN32)
     if (MSVC)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-        add_definitions(-DNOMINMAX)
-        if (CLANG)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp /utf-8")
-        else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /openmp /utf-8")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
+        if (NOT CLANG)
+            add_definitions(-DNOMINMAX)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
         endif()
     endif()
-
     set(LIB_Ws2_32 Ws2_32)
+endif()
+
+if (OPENMP_BUILD)
+    if (CLANG)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
+    else(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
+    endif()
 endif()
 
 if (CYGWIN)
@@ -89,7 +131,9 @@ endif()
 if (UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
 
-    set(LIB_pthread pthread)
+    if (NOT ANDROID)
+        set(LIB_pthread pthread)
+    endif()
 endif()
 
 ###############################################################################
@@ -98,7 +142,7 @@ endif()
 #
 ###############################################################################
 
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.cppan)
+if(NOT CPPAN_BUILD)
     if (NOT Leptonica_DIR AND NOT MSVC)
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(Leptonica REQUIRED lept>=${MINIMUM_LEPTONICA_VERSION})
@@ -117,9 +161,6 @@ endif()
 
 find_package(OpenCL QUIET)
 
-option(BUILD_TRAINING_TOOLS "Build training tools" ON)
-option(BUILD_TESTS "Build tests" OFF)
-
 ###############################################################################
 #
 # configure
@@ -128,6 +169,7 @@ option(BUILD_TESTS "Build tests" OFF)
 
 set(AUTOCONFIG_SRC ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h.in)
 set(AUTOCONFIG ${CMAKE_CURRENT_BINARY_DIR}/config_auto.h)
+add_definitions(-DHAVE_CONFIG_H)
 
 include(Configure)
 
@@ -160,7 +202,6 @@ configure_file(
 include(BuildFunctions)
 include(SourceGroups)
 
-add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-D_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS=1)
 add_definitions(-DWINDLLNAME="libtesseract${VERSION_MAJOR}${VERSION_MINOR}.dll")
 
@@ -223,7 +264,9 @@ set(tesseract_src ${tesseract_src}
     src/api/renderer.cpp
     src/api/altorenderer.cpp
     src/api/hocrrenderer.cpp
+    src/api/lstmboxrenderer.cpp
     src/api/pdfrenderer.cpp
+    src/api/wordstrboxrenderer.cpp
 )
 
 if (WIN32)
@@ -246,6 +289,25 @@ if (WIN32)
             set_source_files_properties(
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/intsimdmatrixavx2.cpp
                 PROPERTIES COMPILE_FLAGS "/arch:AVX2")
+            set_source_files_properties(
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/simddetect.cpp
+                PROPERTIES COMPILE_FLAGS "/DAVX /DAVX2 /DSSE4_1")
+        else(CLANG)
+            set_source_files_properties(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/dotproductsse.cpp
+                    PROPERTIES COMPILE_FLAGS "-msse4.1")
+            set_source_files_properties(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/intsimdmatrixsse.cpp
+                    PROPERTIES COMPILE_FLAGS "-msse4.1")
+            set_source_files_properties(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/dotproductavx.cpp
+                    PROPERTIES COMPILE_FLAGS "-mavx")
+            set_source_files_properties(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/intsimdmatrixavx2.cpp
+                    PROPERTIES COMPILE_FLAGS "-mavx2")
+            set_source_files_properties(
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/simddetect.cpp
+                    PROPERTIES COMPILE_FLAGS "-DAVX -DAVX2 -DSSE4_1")
         endif()  # NOT CLANG
     endif()  # MSVC
 else()
@@ -261,6 +323,9 @@ else()
     set_source_files_properties(
             ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/intsimdmatrixavx2.cpp
             PROPERTIES COMPILE_FLAGS "-mavx2")
+    set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/simddetect.cpp
+            PROPERTIES COMPILE_FLAGS "-DAVX -DAVX2 -DSSE4_1")
 endif()
 
 add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr}
@@ -283,16 +348,16 @@ else()
 set_target_properties           (libtesseract PROPERTIES OUTPUT_NAME tesseract)
 endif()
 
-if (NOT CPPAN_BUILD)
-    target_link_libraries       (libtesseract ${Leptonica_LIBRARIES})
-    export(TARGETS libtesseract FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
-else()
+if (CPPAN_BUILD)
     target_link_libraries       (libtesseract pvt.cppan.demo.danbloomberg.leptonica)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_CURRENT_BINARY_DIR}/cppan.cmake)\n")
     export(TARGETS libtesseract APPEND FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
+else()
+    target_link_libraries       (libtesseract ${Leptonica_LIBRARIES})
+    export(TARGETS libtesseract FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
 endif()
 
-if (WIN32 AND CLANG)
+if (WIN32 AND CLANG AND OPENMP_BUILD)
     # Workaround for "libomp.lib is not automatically added on Windows"
     # see: http://lists.llvm.org/pipermail/openmp-dev/2015-August/000857.html
     # TODO: Find better way how to set Clang OpenMP library for linking on Windows
@@ -346,8 +411,6 @@ install(FILES
     src/arch/dotproductavx.h
     src/arch/dotproductsse.h
     src/arch/intsimdmatrix.h
-    src/arch/intsimdmatrixavx2.h
-    src/arch/intsimdmatrixsse.h
     src/arch/simddetect.h
 
     #from ccmain/makefile.am

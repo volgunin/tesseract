@@ -70,7 +70,9 @@
 #include "mutableiterator.h"   // for MutableIterator
 #include "normalis.h"          // for kBlnBaselineOffset, kBlnXHeight
 #include "ocrclass.h"          // for ETEXT_DESC
-#include "openclwrapper.h"     // for PERF_COUNT_END, PERF_COUNT_START, PERF...
+#if defined(USE_OPENCL)
+#include "openclwrapper.h"     // for OpenclDevice
+#endif
 #include "osdetect.h"          // for OSResults, OSBestResult, OrientationId...
 #include "pageres.h"           // for PAGE_RES_IT, WERD_RES, PAGE_RES, CR_DE...
 #include "paragraphs.h"        // for DetectParagraphs
@@ -206,11 +208,11 @@ TessBaseAPI::TessBaseAPI()
       image_height_(0) {
   const char *locale;
   locale = std::setlocale(LC_ALL, nullptr);
-  ASSERT_HOST(!strcmp(locale, "C"));
+  ASSERT_HOST(!strcmp(locale, "C") || !strcmp(locale, "C.UTF-8"));
   locale = std::setlocale(LC_CTYPE, nullptr);
-  ASSERT_HOST(!strcmp(locale, "C"));
+  ASSERT_HOST(!strcmp(locale, "C") || !strcmp(locale, "C.UTF-8"));
   locale = std::setlocale(LC_NUMERIC, nullptr);
-  ASSERT_HOST(!strcmp(locale, "C"));
+  ASSERT_HOST(!strcmp(locale, "C") || !strcmp(locale, "C.UTF-8"));
 }
 
 TessBaseAPI::~TessBaseAPI() {
@@ -231,21 +233,14 @@ const char* TessBaseAPI::Version() {
  * and returns sizeof(cl_device_id)
  * otherwise *device=nullptr and returns 0.
  */
-#ifdef USE_OPENCL
-#ifdef USE_DEVICE_SELECTION
-#include "opencl_device_selection.h"
-#endif
-#endif
 size_t TessBaseAPI::getOpenCLDevice(void **data) {
 #ifdef USE_OPENCL
-#ifdef USE_DEVICE_SELECTION
   ds_device device = OpenclDevice::getDeviceSelection();
   if (device.type == DS_DEVICE_OPENCL_DEVICE) {
     *data = new cl_device_id;
     memcpy(*data, &device.oclDeviceID, sizeof(cl_device_id));
     return sizeof(cl_device_id);
   }
-#endif
 #endif
 
   *data = nullptr;
@@ -367,7 +362,6 @@ int TessBaseAPI::Init(const char* data, int data_size, const char* language,
                       const GenericVector<STRING>* vars_vec,
                       const GenericVector<STRING>* vars_values,
                       bool set_only_non_debug_params, FileReader reader) {
-  PERF_COUNT_START("TessBaseAPI::Init")
   // Default language is "eng".
   if (language == nullptr) language = "eng";
   STRING datapath = data_size == 0 ? data : language;
@@ -383,12 +377,10 @@ int TessBaseAPI::Init(const char* data, int data_size, const char* language,
     delete tesseract_;
     tesseract_ = nullptr;
   }
-  // PERF_COUNT_SUB("delete tesseract_")
 #ifdef USE_OPENCL
   OpenclDevice od;
   od.InitEnv();
 #endif
-  PERF_COUNT_SUB("OD::InitEnv()")
   bool reset_classifier = true;
   if (tesseract_ == nullptr) {
     reset_classifier = false;
@@ -407,7 +399,6 @@ int TessBaseAPI::Init(const char* data, int data_size, const char* language,
     }
   }
 
-  PERF_COUNT_SUB("update tesseract_")
   // Update datapath and language requested for the last valid initialization.
   if (datapath_ == nullptr)
     datapath_ = new STRING(datapath);
@@ -424,14 +415,11 @@ int TessBaseAPI::Init(const char* data, int data_size, const char* language,
   last_oem_requested_ = oem;
 
 #ifndef DISABLED_LEGACY_ENGINE
-  // PERF_COUNT_SUB("update last_oem_requested_")
   // For same language and datapath, just reset the adaptive classifier.
   if (reset_classifier) {
     tesseract_->ResetAdaptiveClassifier();
-    PERF_COUNT_SUB("tesseract_->ResetAdaptiveClassifier()")
   }
 #endif  // ndef DISABLED_LEGACY_ENGINE
-  PERF_COUNT_END
   return 0;
 }
 
@@ -620,9 +608,9 @@ void TessBaseAPI::SetImage(Pix* pix) {
   if (InternalSetImage()) {
     if (pixGetSpp(pix) == 4 && pixGetInputFormat(pix) == IFF_PNG) {
       // remove alpha channel from png
-      PIX* p1 = pixRemoveAlpha(pix);
+      Pix* p1 = pixRemoveAlpha(pix);
       pixSetSpp(p1, 3);
-      pix = pixCopy(nullptr, p1);
+      (void)pixCopy(pix, p1);
       pixDestroy(&p1);
     }
     thresholder_->SetImage(pix);
@@ -1113,7 +1101,6 @@ bool TessBaseAPI::ProcessPagesInternal(const char* filename,
                                        const char* retry_config,
                                        int timeout_millisec,
                                        TessResultRenderer* renderer) {
-  PERF_COUNT_START("ProcessPages")
   bool stdInput = !strcmp(filename, "stdin") || !strcmp(filename, "-");
   if (stdInput) {
 #ifdef WIN32
@@ -1206,14 +1193,12 @@ bool TessBaseAPI::ProcessPagesInternal(const char* filename,
   if (!r || (renderer && !renderer->EndDocument())) {
     return false;
   }
-  PERF_COUNT_END
   return true;
 }
 
 bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
                               const char* retry_config, int timeout_millisec,
                               TessResultRenderer* renderer) {
-  PERF_COUNT_START("ProcessPage")
   SetInputName(filename);
   SetImage(pix);
   bool failed = false;
@@ -1271,7 +1256,6 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
     failed = !renderer->AddImage(this);
   }
 
-  PERF_COUNT_END
   return !failed;
 }
 
@@ -1988,7 +1972,7 @@ bool TessBaseAPI::Threshold(Pix** pix) {
     pixDestroy(pix);
   // Zero resolution messes up the algorithms, so make sure it is credible.
   int user_dpi = 0;
-  bool a = GetIntVariable("user_defined_dpi", &user_dpi);
+  GetIntVariable("user_defined_dpi", &user_dpi);
   int y_res = thresholder_->GetScaledYResolution();
   if (user_dpi && (user_dpi < kMinCredibleResolution ||
       user_dpi > kMaxCredibleResolution)) {

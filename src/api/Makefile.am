@@ -35,7 +35,9 @@ endif
 libtesseract_api_la_SOURCES = baseapi.cpp capi.cpp
 libtesseract_api_la_SOURCES += altorenderer.cpp
 libtesseract_api_la_SOURCES += hocrrenderer.cpp
+libtesseract_api_la_SOURCES += lstmboxrenderer.cpp
 libtesseract_api_la_SOURCES += pdfrenderer.cpp
+libtesseract_api_la_SOURCES += wordstrboxrenderer.cpp
 libtesseract_api_la_SOURCES += renderer.cpp
 
 lib_LTLIBRARIES += libtesseract.la
@@ -53,15 +55,22 @@ libtesseract_la_LIBADD = \
     ../dict/libtesseract_dict.la \
     ../arch/libtesseract_arch.la \
     ../arch/libtesseract_native.la \
-    ../arch/libtesseract_avx.la \
-    ../arch/libtesseract_avx2.la \
-    ../arch/libtesseract_sse.la \
     ../lstm/libtesseract_lstm.la \
     ../ccstruct/libtesseract_ccstruct.la \
     ../cutil/libtesseract_cutil.la \
     ../viewer/libtesseract_viewer.la \
     ../ccutil/libtesseract_ccutil.la \
     ../opencl/libtesseract_opencl.la
+
+if AVX_OPT
+libtesseract_la_LIBADD += ../arch/libtesseract_avx.la
+endif
+if AVX2_OPT
+libtesseract_la_LIBADD += ../arch/libtesseract_avx2.la
+endif
+if SSE41_OPT
+libtesseract_la_LIBADD += ../arch/libtesseract_sse.la
+endif
 
 libtesseract_la_LDFLAGS += -version-info $(GENERIC_LIBRARY_VERSION) $(NOUNDEFINED)
 

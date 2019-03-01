@@ -2,9 +2,6 @@
 
 if ASCIIDOC
 
-asciidoc=asciidoc -d manpage
-
-
 man_MANS = \
   combine_lang_model.1 \
   combine_tessdata.1  \
@@ -29,16 +26,21 @@ man_MANS += \
   unicharset.5
 endif
 
+man_xslt = http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+
 EXTRA_DIST = $(man_MANS) Doxyfile
 
 .PHONY: html
 
-html: $(patsubst %,%.html,$(man_MANS))
+html: ${man_MANS:%=%.html}
 
-%: %.asc
-	$(asciidoc) -o $@ $<
+SUFFIXES = .asc .html
 
-%.html: %.asc
+.asc:
+	-asciidoc -b docbook -d manpage -o - $< | \
+	xsltproc --nonet $(man_xslt) -
+
+.asc.html:
 	asciidoc -b html5 -o $@ $<
 
 MAINTAINERCLEANFILES = $(man_MANS) Doxyfile

@@ -28,7 +28,9 @@
 #include "baseapi.h"
 #include "basedir.h"
 #include "dict.h"
-#include "openclwrapper.h"
+#if defined(USE_OPENCL)
+#include "openclwrapper.h"      // for OpenclDevice
+#endif
 #include "osdetect.h"
 #include "renderer.h"
 #include "simddetect.h"
@@ -129,7 +131,7 @@ static void PrintHelpForPSM() {
       "Page segmentation modes:\n"
       "  0    Orientation and script detection (OSD) only.\n"
       "  1    Automatic page segmentation with OSD.\n"
-      "  2    Automatic page segmentation, but no OSD, or OCR.\n"
+      "  2    Automatic page segmentation, but no OSD, or OCR. (not implemented)\n"
       "  3    Fully automatic page segmentation, but no OSD. (Default)\n"
       "  4    Assume a single column of text of variable sizes.\n"
       "  5    Assume a single uniform block of vertically aligned text.\n"
@@ -249,7 +251,7 @@ static void SetVariablesFromCLArgs(tesseract::TessBaseAPI* api, int argc,
         exit(EXIT_FAILURE);
       }
       *p = 0;
-      strncpy(opt2, strchr(argv[i + 1], '=') + 1, 255);
+      strncpy(opt2, strchr(argv[i + 1], '=') + 1, sizeof(opt2) - 1);
       opt2[254] = 0;
       ++i;
 
@@ -494,6 +496,20 @@ static void PreloadRenderers(
       }
     }
 
+    api->GetBoolVariable("tessedit_create_lstmbox", &b);
+    if (b) {
+      tesseract::TessLSTMBOXRenderer* renderer =
+        new tesseract::TessLSTMBOXRenderer(outputbase);
+      if (renderer->happy()) {
+        renderers->push_back(renderer);
+      } else {
+        delete renderer;
+        tprintf("Error, could not create LSTM BOX output file: %s\n",
+                strerror(errno));
+        error = true;
+      }
+    }
+
     api->GetBoolVariable("tessedit_create_boxfile", &b);
     if (b) {
       tesseract::TessBoxTextRenderer* renderer =
@@ -508,8 +524,22 @@ static void PreloadRenderers(
       }
     }
 
+    api->GetBoolVariable("tessedit_create_wordstrbox", &b);
+    if (b) {
+      tesseract::TessWordStrBoxRenderer* renderer =
+        new tesseract::TessWordStrBoxRenderer(outputbase);
+      if (renderer->happy()) {
+        renderers->push_back(renderer);
+      } else {
+        delete renderer;
+        tprintf("Error, could not create WordStr BOX output file: %s\n",
+                strerror(errno));
+        error = true;
+      }
+    }
+
     api->GetBoolVariable("tessedit_create_txt", &b);
-    if (b || !error && renderers->empty()) {
+    if (b || (!error && renderers->empty())) {
       tesseract::TessTextRenderer* renderer =
         new tesseract::TessTextRenderer(outputbase);
       if (renderer->happy()) {
@@ -582,8 +612,6 @@ int main(int argc, char** argv) {
   if (image == nullptr && !list_langs && !print_parameters)
     return EXIT_SUCCESS;
 
-  PERF_COUNT_START("Tesseract:main")
-
   // Call GlobalDawgCache here to create the global DawgCache object before
   // the TessBaseAPI object. This fixes the order of destructor calls:
   // first TessBaseAPI must be destructed, DawgCache must be the last object.
@@ -646,6 +674,8 @@ int main(int argc, char** argv) {
 
     const tesseract::PageIterator* it = api.AnalyseLayout();
     if (it) {
+      // TODO: Implement output of page segmentation, see documentation
+      // ("Automatic page segmentation, but no OSD, or OCR").
       it->Orientation(&orientation, &direction, &order, &deskew_angle);
       tprintf(
           "Orientation: %d\nWritingDirection: %d\nTextlineOrder: %d\n"
@@ -718,8 +748,6 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
     }
   }
-
-  PERF_COUNT_END
 
   return EXIT_SUCCESS;
 }

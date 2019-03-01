@@ -74,6 +74,28 @@ BOOL_PARAM_FLAG(rotate_image, true, "Rotate the image in a random way.");
 // Degradation to apply to the image.
 INT_PARAM_FLAG(exposure, 0, "Exposure level in photocopier");
 
+// Distort the rendered image by various means according to the bool flags.
+BOOL_PARAM_FLAG(distort_image, false,
+                "Degrade rendered image with noise, blur, invert.");
+
+// Distortion to apply to the image.
+BOOL_PARAM_FLAG(invert, true, "Invert the image");
+
+// Distortion to apply to the image.
+BOOL_PARAM_FLAG(white_noise, true, "Add  Gaussian Noise");
+
+// Distortion to apply to the image.
+BOOL_PARAM_FLAG(smooth_noise, true, "Smoothen Noise");
+
+// Distortion to apply to the image.
+BOOL_PARAM_FLAG(blur, true, "Blur the image");
+
+// Distortion to apply to the image.
+//BOOL_PARAM_FLAG(perspective, false, "Generate Perspective Distortion");
+
+// Distortion to apply to the image.
+//INT_PARAM_FLAG(box_reduction, 0, "Integer reduction factor box_scale");
+
 // Output image resolution.
 INT_PARAM_FLAG(resolution, 300, "Pixels per inch");
 
@@ -619,6 +641,12 @@ static int Main() {
           pix = DegradeImage(pix, FLAGS_exposure, &randomizer,
                              FLAGS_rotate_image ? &rotation : nullptr);
         }
+        if (FLAGS_distort_image) {
+         //TODO: perspective is set to false and box_reduction to 1.
+          pix = PrepareDistortedPix(pix, false, FLAGS_invert,
+                             FLAGS_white_noise, FLAGS_smooth_noise, FLAGS_blur,
+                             1, &randomizer, nullptr);
+        }
         render.RotatePageBoxes(rotation);
 
         if (pass == 0) {
@@ -690,8 +718,9 @@ int main(int argc, char** argv) {
   // See https://github.com/tesseract-ocr/tesseract/issues/736
   char* backend;
   backend = getenv("PANGOCAIRO_BACKEND");
-  if (backend == NULL) {
-    putenv("PANGOCAIRO_BACKEND=fc");
+  if (backend == nullptr) {
+    static char envstring[] = "PANGOCAIRO_BACKEND=fc";
+    putenv(envstring);
   } else {
     printf("Using '%s' as pango cairo backend based on environment "
            "variable.\n", backend);

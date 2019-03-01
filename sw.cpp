@@ -59,13 +59,22 @@ void build(Solution &s)
             "src/classify"_id,
             "src/arch"_id;
 
+        if (s.Settings.Native.CompilerType == CompilerType::MSVC ||
+            s.Settings.Native.CompilerType == CompilerType::ClangCl)
+        {
+            libtesseract["src/arch/dotproductavx.cpp"].args.push_back("-arch:AVX");
+            libtesseract["src/arch/dotproductsse.cpp"].args.push_back("-D__SSE4_1__");
+            libtesseract["src/arch/intsimdmatrixavx2.cpp"].args.push_back("-arch:AVX2");
+            libtesseract["src/arch/intsimdmatrixsse.cpp"].args.push_back("-D__SSE4_1__");
+        }
+
         libtesseract.Public += "HAVE_CONFIG_H"_d;
         libtesseract.Public += "WINDLLNAME=\"tesseract\""_d;
         libtesseract.Public += "_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS=1"_d;
         libtesseract.Interface += sw::Shared, "TESS_IMPORTS"_d;
         libtesseract.Private += sw::Shared, "TESS_EXPORTS"_d;
 
-        libtesseract.Public += "org.sw.demo.danbloomberg.leptonica-1"_dep;
+        libtesseract.Public += "org.sw.demo.danbloomberg.leptonica-master"_dep;
 
         if (s.Settings.TargetOS.Type == OSType::Windows)
             libtesseract.Public += "ws2_32.lib"_l;
@@ -117,7 +126,8 @@ void build(Solution &s)
 #define ADD_EXE(n, ...)               \
     auto &n = tess.addExecutable(#n); \
     n += "src/training/" #n ".*"_rr;  \
-    n.Public += __VA_ARGS__
+    n.Public += __VA_ARGS__;          \
+    n
 
     ADD_EXE(ambiguous_words, libtesseract);
     ADD_EXE(classifier_tester, common_training);
@@ -125,8 +135,7 @@ void build(Solution &s)
     ADD_EXE(combine_tessdata, libtesseract);
     ADD_EXE(cntraining, common_training);
     ADD_EXE(dawg2wordlist, libtesseract);
-    ADD_EXE(mftraining, common_training);
-    mftraining += "src/training/mergenf.*"_rr;
+    ADD_EXE(mftraining, common_training) += "src/training/mergenf.*"_rr;
     ADD_EXE(shapeclustering, common_training);
     ADD_EXE(unicharset_extractor, unicharset_training);
     ADD_EXE(wordlist2dawg, libtesseract);

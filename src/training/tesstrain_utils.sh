@@ -33,8 +33,10 @@ else
     FONTS_DIR="/usr/share/fonts/"
 fi
 
+X_SIZE=3600
 MAX_PAGES=0
 SAVE_BOX_TIFF=0
+MY_BOXTIFF_DIR=""
 OUTPUT_DIR="/tmp/tesstrain/tessdata"
 OVERWRITE=0
 LINEDATA=0
@@ -156,6 +158,9 @@ parse_flags() {
             --maxpages)
                 parse_value "MAX_PAGES" ${ARGV[$j]:-}
                 i=$j ;;
+            --my_boxtiff_dir)
+                parse_value "MY_BOXTIFF_DIR" ${ARGV[$j]:-}
+                i=$j ;;
             --output_dir)
                 parse_value "OUTPUT_DIR" ${ARGV[$j]:-}
                 i=$j ;;
@@ -184,6 +189,9 @@ parse_flags() {
                 parse_value "WORKSPACE_DIR" ${ARGV[$j]:-}
                 FONT_CONFIG_CACHE=$WORKSPACE_DIR/fc-cache
                 mkdir -p $FONT_CONFIG_CACHE
+                i=$j ;;
+            --xsize)
+                parse_value "X_SIZE" ${ARGV[$j]:-}
                 i=$j ;;
             *)
                 err_exit "Unrecognized argument ${ARGV[$i]}" ;;
@@ -215,7 +223,7 @@ parse_flags() {
     # Take training text and wordlist from the langdata directory if not
     # specified in the command-line.
     TRAINING_TEXT=${TRAINING_TEXT:-${LANGDATA_ROOT}/${LANG_CODE}/${LANG_CODE}.training_text}
-    WORDLIST_FILE=${TRAINING_TEXT:-${LANGDATA_ROOT}/${LANG_CODE}/${LANG_CODE}.wordlist}
+    WORDLIST_FILE=${WORDLIST_FILE:-${LANGDATA_ROOT}/${LANG_CODE}/${LANG_CODE}.wordlist}
 
     WORD_BIGRAMS_FILE=${LANGDATA_ROOT}/${LANG_CODE}/${LANG_CODE}.word.bigrams
     NUMBERS_FILE=${LANGDATA_ROOT}/${LANG_CODE}/${LANG_CODE}.numbers
@@ -246,7 +254,7 @@ generate_font_image() {
 
     local common_args="--fontconfig_tmpdir=${FONT_CONFIG_CACHE}"
     common_args+=" --fonts_dir=${FONTS_DIR} --strip_unrenderable_words"
-    common_args+=" --leading=${LEADING}"
+    common_args+=" --leading=${LEADING} --xsize=${X_SIZE}"
     common_args+=" --char_spacing=${CHAR_SPACING} --exposure=${EXPOSURE}"
     common_args+=" --outputbase=${outbase} --max_pages=${MAX_PAGES}"
 
@@ -303,7 +311,7 @@ phase_I_generate_image() {
             sleep 1
             generate_font_image "${font}" &
             let counter=counter+1
-            let rem=counter%par_factor
+            let rem=counter%par_factor || true
             if [[ "${rem}" -eq 0 ]]; then
               wait
             fi
@@ -436,7 +444,7 @@ phase_E_extract_features() {
         run_command tesseract ${img_file} ${img_file%.*} \
             ${box_config} ${config} &
       let counter=counter+1
-      let rem=counter%par_factor
+      let rem=counter%par_factor || true
       if [[ "${rem}" -eq 0 ]]; then
         wait
       fi
