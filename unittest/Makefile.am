@@ -70,6 +70,7 @@ libabseil_la_SOURCES += ../abseil/absl/strings/internal/str_format/extension.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/internal/str_format/float_conversion.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/internal/str_format/output.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/internal/str_format/parser.cc
+libabseil_la_SOURCES += ../abseil/absl/strings/match.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/numbers.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/str_cat.cc
 libabseil_la_SOURCES += ../abseil/absl/strings/str_split.cc
@@ -93,7 +94,7 @@ libgmock_main_la_CPPFLAGS = $(GMOCK_INCLUDES) \
 ABSEIL_LIBS = libabseil.la
 GTEST_LIBS =  libgtest.la libgtest_main.la -lpthread
 GMOCK_LIBS =  libgmock.la libgmock_main.la
-TESS_LIBS = $(top_builddir)/src/api/libtesseract.la
+TESS_LIBS = $(top_builddir)/src/api/libtesseract.la $(libarchive_LIBS)
 TRAINING_LIBS = $(top_builddir)/src/training/libtesseract_training.la
 TRAINING_LIBS += $(top_builddir)/src/training/libtesseract_tessopt.la
 AM_CPPFLAGS +=   -isystem $(top_srcdir)/googletest/googletest/include \
@@ -153,6 +154,13 @@ check_PROGRAMS += validator_test
 endif
 
 TESTS = $(check_PROGRAMS)
+
+.PHONY: all
+
+all: tmp
+
+tmp:
+	mkdir -p tmp
 
 # List of source files needed to build the executable:
 

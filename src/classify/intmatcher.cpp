@@ -29,7 +29,6 @@
 #include "callcpp.h"
 #include "scrollview.h"
 #include "float2int.h"
-#include "globals.h"
 #include "helpers.h"
 #include "classify.h"
 #include "shapetable.h"
@@ -767,8 +766,6 @@ int IntegerMatcher::UpdateTablesForFeature(
   uint8_t proto_byte;
   int32_t proto_word_offset;
   int32_t proto_offset;
-  uint8_t config_byte;
-  int32_t config_offset;
   PROTO_SET ProtoSet;
   uint32_t *ProtoPrunerPtr;
   INT_PROTO Proto;
@@ -777,14 +774,6 @@ int IntegerMatcher::UpdateTablesForFeature(
   uint32_t XFeatureAddress;
   uint32_t YFeatureAddress;
   uint32_t ThetaFeatureAddress;
-  uint8_t* UINT8Pointer;
-  int ProtoIndex;
-  uint8_t Temp;
-  int* IntPointer;
-  int ConfigNum;
-  int32_t M3;
-  int32_t A3;
-  uint32_t A4;
 
   tables->ClearFeatureEvidence(ClassTemplate);
 
@@ -820,10 +809,10 @@ int IntegerMatcher::UpdateTablesForFeature(
           proto_byte = next_table[proto_byte];
           Proto = &(ProtoSet->Protos[ProtoNum + proto_offset]);
           ConfigWord = Proto->Configs[0];
-          A3 = (((Proto->A * (Feature->X - 128)) << 1)
-            - (Proto->B * (Feature->Y - 128)) + (Proto->C << 9));
-          M3 =
-            (((int8_t) (Feature->Theta - Proto->Angle)) * kIntThetaFudge) << 1;
+          int32_t A3 = (((Proto->A * (Feature->X - 128)) * 2)
+            - (Proto->B * (Feature->Y - 128)) + (Proto->C * 512));
+          int32_t M3 = ((static_cast<int8_t>(Feature->Theta - Proto->Angle)) *
+                        kIntThetaFudge) * 2;
 
           if (A3 < 0)
             A3 = ~A3;
@@ -836,7 +825,7 @@ int IntegerMatcher::UpdateTablesForFeature(
           if (static_cast<uint32_t>(M3) > evidence_mult_mask_)
             M3 = evidence_mult_mask_;
 
-          A4 = (A3 * A3) + (M3 * M3);
+          uint32_t A4 = (A3 * A3) + (M3 * M3);
           A4 >>= table_trunc_shift_bits_;
           if (A4 > evidence_table_mask_)
             Evidence = 0;
@@ -850,27 +839,28 @@ int IntegerMatcher::UpdateTablesForFeature(
 
           ConfigWord &= *ConfigMask;
 
-          UINT8Pointer = tables->feature_evidence_ - 8;
-          config_byte = 0;
+          uint8_t feature_evidence_index = 0;
+          uint8_t config_byte = 0;
           while (ConfigWord != 0 || config_byte != 0) {
             while (config_byte == 0) {
               config_byte = ConfigWord & 0xff;
               ConfigWord >>= 8;
-              UINT8Pointer += 8;
+              feature_evidence_index += 8;
             }
-            config_offset = offset_table[config_byte];
+            const uint8_t config_offset =
+              offset_table[config_byte] + feature_evidence_index - 8;
             config_byte = next_table[config_byte];
-            if (Evidence > UINT8Pointer[config_offset])
-              UINT8Pointer[config_offset] = Evidence;
+            if (Evidence > tables->feature_evidence_[config_offset])
+              tables->feature_evidence_[config_offset] = Evidence;
           }
 
-          UINT8Pointer =
+          uint8_t* UINT8Pointer =
             &(tables->proto_evidence_[ActualProtoNum + proto_offset][0]);
-          for (ProtoIndex =
+          for (int ProtoIndex =
             ClassTemplate->ProtoLengths[ActualProtoNum + proto_offset];
           ProtoIndex > 0; ProtoIndex--, UINT8Pointer++) {
             if (Evidence > *UINT8Pointer) {
-              Temp = *UINT8Pointer;
+              uint8_t Temp = *UINT8Pointer;
               *UINT8Pointer = Evidence;
               Evidence = Temp;
             }
@@ -887,10 +877,10 @@ int IntegerMatcher::UpdateTablesForFeature(
                             ClassTemplate->NumConfigs);
   }
 
-  IntPointer = tables->sum_feature_evidence_;
-  UINT8Pointer = tables->feature_evidence_;
+  int* IntPointer = tables->sum_feature_evidence_;
+  uint8_t* UINT8Pointer = tables->feature_evidence_;
   int SumOverConfigs = 0;
-  for (ConfigNum = ClassTemplate->NumConfigs; ConfigNum > 0; ConfigNum--) {
+  for (int ConfigNum = ClassTemplate->NumConfigs; ConfigNum > 0; ConfigNum--) {
     int evidence = *UINT8Pointer++;
     SumOverConfigs += evidence;
     *IntPointer++ += evidence;

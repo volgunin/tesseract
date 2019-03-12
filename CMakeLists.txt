@@ -160,6 +160,11 @@ else()
 endif()
 
 find_package(OpenCL QUIET)
+find_package(LibArchive)
+if(LibArchive_FOUND)
+    add_definitions(-DHAVE_LIBARCHIVE)
+endif()
+
 
 ###############################################################################
 #
@@ -338,7 +343,7 @@ target_compile_definitions      (libtesseract
 )
 set_target_properties           (libtesseract PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS True)
 endif()
-target_link_libraries           (libtesseract ${LIB_Ws2_32} ${LIB_pthread})
+target_link_libraries           (libtesseract PRIVATE ${LIB_Ws2_32} ${LIB_pthread})
 set_target_properties           (libtesseract PROPERTIES VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set_target_properties           (libtesseract PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 if (WIN32)
@@ -349,11 +354,17 @@ set_target_properties           (libtesseract PROPERTIES OUTPUT_NAME tesseract)
 endif()
 
 if (CPPAN_BUILD)
-    target_link_libraries       (libtesseract pvt.cppan.demo.danbloomberg.leptonica)
+    target_link_libraries       (libtesseract PUBLIC
+        pvt.cppan.demo.danbloomberg.leptonica
+        pvt.cppan.demo.libarchive.libarchive
+    )
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_CURRENT_BINARY_DIR}/cppan.cmake)\n")
     export(TARGETS libtesseract APPEND FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
 else()
-    target_link_libraries       (libtesseract ${Leptonica_LIBRARIES})
+    target_link_libraries       (libtesseract PUBLIC
+        ${Leptonica_LIBRARIES}
+        ${LibArchive_LIBRARIES}
+    )
     export(TARGETS libtesseract FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
 endif()
 
@@ -361,7 +372,7 @@ if (WIN32 AND CLANG AND OPENMP_BUILD)
     # Workaround for "libomp.lib is not automatically added on Windows"
     # see: http://lists.llvm.org/pipermail/openmp-dev/2015-August/000857.html
     # TODO: Find better way how to set Clang OpenMP library for linking on Windows
-    target_link_libraries       (libtesseract "c:\\Program Files\\LLVM\\lib\\libomp.lib")
+    target_link_libraries       (libtesseract PRIVATE "c:\\Program Files\\LLVM\\lib\\libomp.lib")
 endif()
 
 ########################################

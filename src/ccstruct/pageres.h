@@ -221,7 +221,12 @@ class WERD_RES : public ELIST_LINK {
   // blob i and blob i+1.
   GenericVector<int> blob_gaps;
   // Stores the lstm choices of every timestep
-  std::vector<std::vector<std::pair<const char*, float>>> timesteps;
+  std::vector<std::vector<std::pair<const char*, float>>> raw_timesteps;
+  std::vector<std::vector<std::pair<const char*, float>>> accumulated_timesteps;
+  std::vector<std::vector<std::vector<std::pair<const char*, float>>>>
+      symbol_steps;
+  //Stores if the timestep vector starts with a space
+  bool leadingSpace = false;
   // Ratings matrix contains classifier choices for each classified combination
   // of blobs. The dimension is the same as the number of blobs in chopped_word
   // and the leading diagonal corresponds to classifier results of the blobs
@@ -685,7 +690,10 @@ class PAGE_RES_IT {
 
   // Do two PAGE_RES_ITs point at the same word?
   // This is much cheaper than cmp().
-  bool operator ==(const PAGE_RES_IT &other) const;
+  bool operator ==(const PAGE_RES_IT &other) const {
+    return word_res == other.word_res && row_res == other.row_res &&
+           block_res == other.block_res;
+  }
 
   bool operator !=(const PAGE_RES_IT &other) const {return !(*this == other); }
 

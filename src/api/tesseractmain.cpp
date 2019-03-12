@@ -41,6 +41,10 @@
 #include <omp.h>
 #endif
 
+#if defined(HAVE_LIBARCHIVE)
+#include <archive.h>
+#endif
+
 #if defined(_WIN32)
 #include <fcntl.h>
 #include <io.h>
@@ -123,6 +127,13 @@ static void PrintVersionInfo() {
 #ifdef _OPENMP
   printf(" Found OpenMP %d\n", _OPENMP);
 #endif
+#if defined(HAVE_LIBARCHIVE)
+#  if ARCHIVE_VERSION_NUMBER >= 3002000
+  printf(" Found %s", archive_version_details());
+#  else
+  printf(" Found %s", archive_version_string());
+#  endif  // ARCHIVE_VERSION_NUMBER
+#endif    // HAVE_LIBARCHIVE
 
 }
 
@@ -498,8 +509,8 @@ static void PreloadRenderers(
 
     api->GetBoolVariable("tessedit_create_lstmbox", &b);
     if (b) {
-      tesseract::TessLSTMBOXRenderer* renderer =
-        new tesseract::TessLSTMBOXRenderer(outputbase);
+      tesseract::TessLSTMBoxRenderer* renderer =
+        new tesseract::TessLSTMBoxRenderer(outputbase);
       if (renderer->happy()) {
         renderers->push_back(renderer);
       } else {
