@@ -177,7 +177,7 @@ void Tesseract::unrej_good_quality_words(  //unreject potential
     }
     else if ((page_res_it.row ()->char_count > 0) &&
       ((page_res_it.row ()->rej_count /
-      (float) page_res_it.row ()->char_count) <=
+      static_cast<float>(page_res_it.row ()->char_count)) <=
     quality_rowrej_pc)) {
       word = page_res_it.word ();
       if (word->reject_map.quality_recoverable_rejects() &&
@@ -420,7 +420,7 @@ void Tesseract::tilde_crunch(PAGE_RES_IT &page_res_it) {
   PAGE_RES_IT copy_it;
   bool prev_potential_marked = false;
   bool found_terrible_word = false;
-  BOOL8 ok_dict_word;
+  bool ok_dict_word;
 
   page_res_it.restart_page();
   while (page_res_it.word() != nullptr) {
@@ -676,7 +676,7 @@ void Tesseract::convert_bad_unlv_chs(WERD_RES *word_res) {
   }
 }
 
-GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, BOOL8 ok_dict_word) {
+GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, bool ok_dict_word) {
   enum STATES
   {
     JUNK,
@@ -863,7 +863,7 @@ GARBAGE_LEVEL Tesseract::garbage_word(WERD_RES *word, BOOL8 ok_dict_word) {
   if (len > 4) {
     dodgy_chars = 2 * tess_rejs + bad_char_count + isolated_digits +
         isolated_alphas;
-    if (dodgy_chars > 5 || (dodgy_chars / (float) len) > 0.5)
+    if (dodgy_chars > 5 || (dodgy_chars / static_cast<float>(len)) > 0.5)
       return G_DODGY;
     else
       return G_OK;

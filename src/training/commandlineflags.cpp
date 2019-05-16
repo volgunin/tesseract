@@ -8,6 +8,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>                // for std::isnan, NAN
+#include <locale>               // for std::locale::classic
+#include <sstream>              // for std::stringstream
 #include "baseapi.h"            // TessBaseAPI::Version
 #include "commandlineflags.h"
 #include "errcode.h"
@@ -45,7 +48,7 @@ static bool BoolFlagExists(const char* flag_name, bool* value) {
   BoolParam *p = ParamUtils::FindParam<BoolParam>(
       full_flag_name.string(), GlobalParams()->bool_params, empty);
   if (p == nullptr) return false;
-  *value = (BOOL8)(*p);
+  *value = bool(*p);
   return true;
 }
 
@@ -106,9 +109,17 @@ static bool SafeAtoi(const char* str, int* val) {
 }
 
 static bool SafeAtod(const char* str, double* val) {
-  char* endptr = nullptr;
-  *val = strtod(str, &endptr);
-  return endptr != nullptr && *endptr == '\0';
+  double d = NAN;
+  std::stringstream stream(str);
+  // Use "C" locale for reading double value.
+  stream.imbue(std::locale::classic());
+  stream >> d;
+  *val = 0;
+  bool success = !std::isnan(d);
+  if (success) {
+    *val = d;
+  }
+  return success;
 }
 
 static void PrintCommandLineFlags() {
@@ -138,7 +149,7 @@ static void PrintCommandLineFlags() {
       printf("  --%s  %s  (type:bool default:%s)\n",
              GlobalParams()->bool_params[i]->name_str() + kFlagNamePrefixLen,
              GlobalParams()->bool_params[i]->info_str(),
-             (BOOL8(*(GlobalParams()->bool_params[i])) ? "true" : "false"));
+             bool(*(GlobalParams()->bool_params[i])) ? "true" : "false");
     }
   }
   for (int i = 0; i < GlobalParams()->string_params.size(); ++i) {

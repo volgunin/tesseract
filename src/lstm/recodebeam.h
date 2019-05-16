@@ -245,12 +245,12 @@ class RecodeBeamSearch {
   struct RecodeBeam {
     // Resets to the initial state without deleting all the memory.
     void Clear() {
-      for (int i = 0; i < kNumBeams; ++i) {
-        beams_[i].clear();
+      for (auto & beam : beams_) {
+        beam.clear();
       }
       RecodeNode empty;
-      for (int i = 0; i < NC_COUNT; ++i) {
-        best_initial_dawgs_[i] = empty;
+      for (auto & best_initial_dawg : best_initial_dawgs_) {
+        best_initial_dawg = empty;
       }
     }
 
@@ -312,9 +312,9 @@ class RecodeBeamSearch {
   // using the given network outputs to provide scores to the choices. Uses only
   // those choices for which top_n_flags[code] == top_n_flag.
   void ContinueContext(const RecodeNode* prev, int index, const float* outputs,
-                       TopNState top_n_flag, double dict_ratio,
-                       double cert_offset, double worst_dict_cert,
-                       RecodeBeam* step);
+                       TopNState top_n_flag, const UNICHARSET* unicharset,
+                       double dict_ratio, double cert_offset,
+                       double worst_dict_cert, RecodeBeam* step);
   // Continues for a new unichar, using dawg or non-dawg as per flag.
   void ContinueUnichar(int code, int unichar_id, float cert,
                        float worst_dict_cert, float dict_ratio, bool use_dawgs,

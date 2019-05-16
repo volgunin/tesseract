@@ -19,7 +19,6 @@
 //              training-related code, but they don't interfere with normal
 //              recognition operation.
 // Author:      Ray Smith
-// Created:     Fri Mar 07 08:17:01 PST 2008
 //
 // (C) Copyright 2008, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,8 +70,9 @@ Tesseract::Tesseract()
       // upset anything that relies on that.
       INT_MEMBER(
           tessedit_pageseg_mode, PSM_SINGLE_BLOCK,
-          "Page seg mode: 0=osd only, 1=auto+osd, 2=auto, 3=col, 4=block,"
-          " 5=line, 6=word, 7=char"
+          "Page seg mode: 0=osd only, 1=auto+osd, 2=auto_only, 3=auto, 4=column,"
+          " 5=block_vert, 6=block, 7=line, 8=word, 9=word_circle, 10=char,"
+          "11=sparse_text, 12=sparse_text+osd, 13=raw_line"
           " (Values from PageSegMode enum in publictypes.h)",
           this->params()),
       INT_INIT_MEMBER(tessedit_ocr_engine_mode, tesseract::OEM_DEFAULT,
@@ -489,7 +489,7 @@ Tesseract::Tesseract()
                     "Min acceptable orientation margin", this->params()),
       BOOL_MEMBER(textord_tabfind_show_vlines, false, "Debug line finding",
                   this->params()),
-      BOOL_MEMBER(textord_use_cjk_fp_model, FALSE, "Use CJK fixed pitch model",
+      BOOL_MEMBER(textord_use_cjk_fp_model, false, "Use CJK fixed pitch model",
                   this->params()),
       BOOL_MEMBER(poly_allow_detailed_fx, false,
                   "Allow feature extractors to see the original outline",
@@ -621,11 +621,23 @@ void Tesseract::SetBlackAndWhitelist() {
   unicharset.set_black_and_whitelist(tessedit_char_blacklist.string(),
                                      tessedit_char_whitelist.string(),
                                      tessedit_char_unblacklist.string());
+  if (lstm_recognizer_) {
+    UNICHARSET& lstm_unicharset = const_cast<UNICHARSET&> (lstm_recognizer_->GetUnicharset());
+    lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist.string(),
+                                            tessedit_char_whitelist.string(),
+                                            tessedit_char_unblacklist.string());
+  }
   // Black and white lists should apply to all loaded classifiers.
   for (int i = 0; i < sub_langs_.size(); ++i) {
     sub_langs_[i]->unicharset.set_black_and_whitelist(
         tessedit_char_blacklist.string(), tessedit_char_whitelist.string(),
         tessedit_char_unblacklist.string());
+    if (sub_langs_[i]->lstm_recognizer_) {
+      UNICHARSET& lstm_unicharset = const_cast<UNICHARSET&> (sub_langs_[i]->lstm_recognizer_->GetUnicharset());
+      lstm_unicharset.set_black_and_whitelist(tessedit_char_blacklist.string(),
+                                              tessedit_char_whitelist.string(),
+                                              tessedit_char_unblacklist.string());
+    }
   }
 }
 
@@ -634,11 +646,11 @@ void Tesseract::SetBlackAndWhitelist() {
 void Tesseract::PrepareForPageseg() {
   textord_.set_use_cjk_fp_model(textord_use_cjk_fp_model);
   // Find the max splitter strategy over all langs.
-  ShiroRekhaSplitter::SplitStrategy max_pageseg_strategy =
+  auto max_pageseg_strategy =
       static_cast<ShiroRekhaSplitter::SplitStrategy>(
       static_cast<int32_t>(pageseg_devanagari_split_strategy));
   for (int i = 0; i < sub_langs_.size(); ++i) {
-    ShiroRekhaSplitter::SplitStrategy pageseg_strategy =
+    auto pageseg_strategy =
         static_cast<ShiroRekhaSplitter::SplitStrategy>(
         static_cast<int32_t>(sub_langs_[i]->pageseg_devanagari_split_strategy));
     if (pageseg_strategy > max_pageseg_strategy)
@@ -665,11 +677,11 @@ void Tesseract::PrepareForPageseg() {
 void Tesseract::PrepareForTessOCR(BLOCK_LIST* block_list,
                                   Tesseract* osd_tess, OSResults* osr) {
   // Find the max splitter strategy over all langs.
-  ShiroRekhaSplitter::SplitStrategy max_ocr_strategy =
+  auto max_ocr_strategy =
       static_cast<ShiroRekhaSplitter::SplitStrategy>(
       static_cast<int32_t>(ocr_devanagari_split_strategy));
   for (int i = 0; i < sub_langs_.size(); ++i) {
-    ShiroRekhaSplitter::SplitStrategy ocr_strategy =
+    auto ocr_strategy =
         static_cast<ShiroRekhaSplitter::SplitStrategy>(
         static_cast<int32_t>(sub_langs_[i]->ocr_devanagari_split_strategy));
     if (ocr_strategy > max_ocr_strategy)
@@ -688,7 +700,7 @@ void Tesseract::PrepareForTessOCR(BLOCK_LIST* block_list,
   // (from the last SegmentImage call) with blobs from the real image to be used
   // for OCR.
   if (splitter_.HasDifferentSplitStrategies()) {
-    BLOCK block("", TRUE, 0, 0, 0, 0, pixGetWidth(pix_binary_),
+    BLOCK block("", true, 0, 0, 0, 0, pixGetWidth(pix_binary_),
                 pixGetHeight(pix_binary_));
     Pix* pix_for_ocr = split_for_ocr ? splitter_.splitted_image() :
         splitter_.orig_pix();

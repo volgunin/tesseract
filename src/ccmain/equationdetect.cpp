@@ -1102,7 +1102,7 @@ bool EquationDetect::ExpandSeed(ColPartition* seed) {
 
   // Merge all partitions in parts_to_merge with seed. We first remove seed
   // from part_grid_ as its bounding box is going to expand. Then we add it
-  // back after it aborbs all parts_to_merge parititions.
+  // back after it absorbs all parts_to_merge partitions.
   part_grid_->RemoveBBox(seed);
   for (int i = 0; i < parts_to_merge.size(); ++i) {
     ColPartition* part = parts_to_merge[i];
@@ -1511,7 +1511,7 @@ void EquationDetect::PrintSpecialBlobsDensity(const ColPartition* part) const {
   box.print();
   tprintf("blobs count = %d, density = ", part->boxes_count());
   for (int i = 0; i < BSTT_COUNT; ++i) {
-    BlobSpecialTextType type = static_cast<BlobSpecialTextType>(i);
+    auto type = static_cast<BlobSpecialTextType>(i);
     tprintf("%d:%f ", i, part->SpecialBlobsDensity(type));
   }
   tprintf("\n");

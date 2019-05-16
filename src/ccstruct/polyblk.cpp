@@ -16,11 +16,12 @@
  **********************************************************************/
 
 #include "polyblk.h"
+#include "elst.h"
 #include <cctype>
+#include <cinttypes>  // PRId32
 #include <cmath>
 #include <cstdio>
-#include <memory>  // std::unique_ptr
-#include "elst.h"
+#include <memory>     // std::unique_ptr
 
 // Include automatically generated configuration file if running autoconf.
 #ifdef HAVE_CONFIG_H

@@ -91,7 +91,7 @@ case "${host_os}" in
         AC_SUBST([NOUNDEFINED], ['-no-undefined'])
         ;;
     solaris*)
-        LIBS="-lsocket -lnsl -lrt -lxnet"
+        LIBS="$LIBS -lsocket -lnsl -lrt -lxnet"
         AM_CONDITIONAL([ADD_RT], true)
         ;;
     *darwin*)
@@ -111,31 +111,24 @@ case "${host_os}" in
         ;;
 esac
 
+# The test code used by AX_CHECK_COMPILE_FLAG uses macros which are unused.
+# That must not break the check, so disable a related warning if necessary.
+WERROR=-Werror
+AX_CHECK_COMPILE_FLAG([-Wno-unused-macros], [WERROR="$WERROR -Wno-unused-macros"])
+
 ## Checks for supported compiler options.
-AM_CONDITIONAL([AVX_OPT], false)
-AM_CONDITIONAL([AVX2_OPT], false)
-AM_CONDITIONAL([SSE41_OPT], false)
-AM_CONDITIONAL([MARCH_NATIVE_OPT], false)
 
-AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false])
-if $avx; then
-    AM_CONDITIONAL([AVX_OPT], true)
-fi
+AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
+AM_CONDITIONAL([AVX_OPT], ${avx})
 
-AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false])
-if $avx2; then
-    AM_CONDITIONAL([AVX2_OPT], true)
-fi
+AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
+AM_CONDITIONAL([AVX2_OPT], $avx2)
 
-AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false])
-if $sse41; then
-    AM_CONDITIONAL([SSE41_OPT], true)
-fi
+AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
+AM_CONDITIONAL([SSE41_OPT], $sse41)
 
-AX_CHECK_COMPILE_FLAG([-march=native], [arch_native=true], [arch_native=false])
-if $arch_native; then
-    AM_CONDITIONAL([MARCH_NATIVE_OPT], true)
-fi
+AX_CHECK_COMPILE_FLAG([-march=native], [arch_native=true], [arch_native=false], [$WERROR])
+AM_CONDITIONAL([MARCH_NATIVE_OPT], $arch_native)
 
 AC_ARG_WITH([extra-includes],
             [AS_HELP_STRING([--with-extra-includes=DIR],
@@ -337,12 +330,12 @@ dnl **********************
 
 CPLUSPLUS=
 
-AX_CHECK_COMPILE_FLAG([-std=c++11], [cplusplus11=true], [cplusplus11=false])
+AX_CHECK_COMPILE_FLAG([-std=c++11], [cplusplus11=true], [cplusplus11=false], [$WERROR])
 if $cplusplus11; then
   CPLUSPLUS=11
 fi
 
-AX_CHECK_COMPILE_FLAG([-std=c++14], [cplusplus14=true], [cplusplus14=false])
+AX_CHECK_COMPILE_FLAG([-std=c++14], [cplusplus14=true], [cplusplus14=false], [$WERROR])
 if $cplusplus14; then
   CPLUSPLUS=14
 fi
@@ -375,7 +368,7 @@ esac
 # Check for libraries
 # ----------------------------------------
 
-AC_SEARCH_LIBS([sem_init], [pthread rt])
+AC_SEARCH_LIBS([pthread_create], [pthread])
 
 
 # ----------------------------------------
@@ -426,6 +419,7 @@ PKG_CHECK_MODULES([libarchive], [libarchive], [have_libarchive=true], [have_liba
 AM_CONDITIONAL([HAVE_LIBARCHIVE], [$have_libarchive])
 if $have_libarchive; then
   AC_DEFINE([HAVE_LIBARCHIVE], [], [Enable libarchive])
+  CPPFLAGS="$CPPFLAGS $libarchive_CFLAGS"
 fi
 
 AM_CONDITIONAL([ENABLE_TRAINING], true)
@@ -440,6 +434,8 @@ if !($have_icu_uc && $have_icu_i18n); then
         AC_MSG_WARN([Try to install libicu-devel package.])
         AM_CONDITIONAL([ENABLE_TRAINING], false)
   fi
+else
+  CPPFLAGS="$CPPFLAGS $ICU_UC_CFLAGS $ICU_I18N_CFLAGS"
 fi
 
 # Check location of pango headers

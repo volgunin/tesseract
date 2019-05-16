@@ -3,7 +3,6 @@
 // Description: Iterator for tesseract results in strict left-to-right
 //              order that avoids using tesseract internal data structures.
 // Author:      Ray Smith
-// Created:     Fri Feb 26 14:32:09 PST 2010
 //
 // (C) Copyright 2010, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -362,7 +361,7 @@ ChoiceIterator::ChoiceIterator(const LTRResultIterator& result_it) {
   oemLegacy_ = word_res_->tesseract->AnyTessLang();
   BLOB_CHOICE_LIST* choices = nullptr;
   tstep_index_ = &result_it.blob_index_;
-  if (oemLSTM_ && !oemLegacy_ && &word_res_->accumulated_timesteps != nullptr) {
+  if (oemLSTM_ && !oemLegacy_ && !word_res_->accumulated_timesteps.empty()) {
     if (word_res_->leadingSpace)
       LSTM_choices_ = &word_res_->accumulated_timesteps[(*tstep_index_) + 1];
     else
@@ -416,9 +415,9 @@ const char* ChoiceIterator::GetUTF8Text() const {
 }
 
 // Returns the confidence of the current choice depending on the used language
-// data. If only LSTM traineddata is used the value range is 0.0f - 1.0f. All 
+// data. If only LSTM traineddata is used the value range is 0.0f - 1.0f. All
 // choices for one symbol should roughly add up to 1.0f.
-// If only traineddata of the legacy engine is used, the number should be 
+// If only traineddata of the legacy engine is used, the number should be
 // interpreted as a percent probability. (0.0f-100.0f) In this case probabilities
 // won't add up to 100. Each one stands on its own.
 float ChoiceIterator::Confidence() const {
@@ -437,7 +436,7 @@ float ChoiceIterator::Confidence() const {
 // Returns the set of timesteps which belong to the current symbol
 std::vector<std::vector<std::pair<const char*, float>>>*
 ChoiceIterator::Timesteps() const {
-  if (&word_res_->symbol_steps == nullptr || !LSTM_mode_) return nullptr;
+  if (word_res_->symbol_steps.empty() || !LSTM_mode_) return nullptr;
   if (word_res_->leadingSpace) {
     return &word_res_->symbol_steps[*(tstep_index_) + 1];
   } else {
@@ -447,11 +446,10 @@ ChoiceIterator::Timesteps() const {
 
 void ChoiceIterator::filterSpaces() {
   if (LSTM_choices_->empty()) return;
-  std::vector<std::pair<const char*, float>>::iterator it =
-      LSTM_choices_->begin();
+  std::vector<std::pair<const char*, float>>::iterator it;
   bool found_space = false;
   float sum = 0;
-  for (it; it != LSTM_choices_->end();) {
+  for (it = LSTM_choices_->begin(); it != LSTM_choices_->end();) {
     if (!strcmp(it->first, " ")) {
       it = LSTM_choices_->erase(it);
       found_space = true;

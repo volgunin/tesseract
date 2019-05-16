@@ -2,7 +2,6 @@
  * File:        pageres.h  (Formerly page_res.h)
  * Description: Results classes used by control.c
  * Author:      Phil Cheatle
- * Created:     Tue Sep 22 08:42:49 BST 1992
  *
  * (C) Copyright 1992, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -292,7 +291,7 @@ class WERD_RES : public ELIST_LINK {
   REJMAP reject_map;           // best_choice rejects
   bool tess_failed;
   /*
-    If tess_failed is TRUE, one of the following tests failed when Tess
+    If tess_failed is true, one of the following tests failed when Tess
     returned:
     - The outword blob list was not the same length as the best_choice string;
     - The best_choice string contained ALL blanks;
@@ -352,6 +351,8 @@ class WERD_RES : public ELIST_LINK {
   // Deep copies everything except the ratings MATRIX.
   // To get that use deep_copy below.
   WERD_RES(const WERD_RES& source) : ELIST_LINK(source) {
+    // combination is used in function Clear which is called from operator=.
+    combination = false;
     InitPointers();
     *this = source;            // see operator=
   }
@@ -652,7 +653,7 @@ class WERD_RES : public ELIST_LINK {
 
   // Returns a really deep copy of *src, including the ratings MATRIX.
   static WERD_RES* deep_copy(const WERD_RES* src) {
-    WERD_RES* result = new WERD_RES(*src);
+    auto* result = new WERD_RES(*src);
     // That didn't copy the ratings, but we want a copy if there is one to
     // begin with.
     if (src->ratings != nullptr)
