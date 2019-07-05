@@ -35,7 +35,6 @@ void build(Solution &s)
             "src/textord/.*\\.h"_rr,
             "src/viewer/.*\\.cpp"_rr,
             "src/viewer/.*\\.h"_rr,
-            "src/vs2010/port/.*"_rr,
             "src/wordrec/.*\\.cpp"_rr,
             "src/wordrec/.*\\.h"_rr;
 
@@ -44,7 +43,6 @@ void build(Solution &s)
             "src/viewer/svpaint.cpp";
 
         libtesseract.Public +=
-            "src/vs2010/port"_id,
             "src/opencl"_id,
             "src/ccmain"_id,
             "src/api"_id,
@@ -96,7 +94,6 @@ void build(Solution &s)
     //
     auto &tessopt = tess.addStaticLibrary("tessopt");
     tessopt += "src/training/tessopt.*"_rr;
-    tessopt.Public += "training"_id;
     tessopt.Public += libtesseract;
 
     //
@@ -106,21 +103,19 @@ void build(Solution &s)
         "src/training/commandlineflags.h",
         "src/training/commontraining.cpp",
         "src/training/commontraining.h";
-    common_training.Public += "training"_id;
     common_training.Public += tessopt;
 
     //
     auto &unicharset_training = tess.addStaticLibrary("unicharset_training");
     unicharset_training +=
-        "src/training/fileio.*"_rr,
         "src/training/icuerrorcode.*"_rr,
         "src/training/icuerrorcode.h",
         "src/training/lang_model_helpers.*"_rr,
         "src/training/lstmtester.*"_rr,
+        "src/training/lstmtrainer.*"_rr,
         "src/training/normstrngs.*"_rr,
         "src/training/unicharset_training_utils.*"_rr,
         "src/training/validat.*"_rr;
-    unicharset_training.Public += "training"_id;
     unicharset_training.Public += common_training;
     unicharset_training.Public += "org.sw.demo.unicode.icu.i18n"_dep;
 

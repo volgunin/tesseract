@@ -23,11 +23,11 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>   // for std::function
 
 #include "helpers.h"
 #include "serialis.h"
 #include "strngs.h"
-#include "tesscallback.h"
 
 // Use PointerVector<T> below in preference to GenericVector<T*>, as that
 // provides automatic deletion of pointers, [De]Serialize that works, and
@@ -140,11 +140,15 @@ class GenericVector {
 
   // Add a callback to be called to delete the elements when the array took
   // their ownership.
-  void set_clear_callback(TessCallback1<T>* cb);
+  void set_clear_callback(std::function<void(T)> cb) {
+    clear_cb_ = cb;
+  }
 
   // Add a callback to be called to compare the elements when needed (contains,
   // get_id, ...)
-  void set_compare_callback(TessResultCallback2<bool, T const&, T const&>* cb);
+  void set_compare_callback(std::function<bool(const T&, const T&)> cb) {
+    compare_cb_ = cb;
+  }
 
   // Clear the array, calling the clear callback function if any.
   // All the owned callbacks are also deleted.
@@ -167,9 +171,9 @@ class GenericVector {
   // fread (and swapping)/fwrite.
   // Returns false on error or if the callback returns false.
   // DEPRECATED. Use [De]Serialize[Classes] instead.
-  bool write(FILE* f, TessResultCallback2<bool, FILE*, T const&>* cb) const;
+  bool write(FILE* f, std::function<bool(FILE*, const T&)> cb) const;
   bool read(tesseract::TFile* f,
-            TessResultCallback2<bool, tesseract::TFile*, T*>* cb);
+            std::function<bool(tesseract::TFile*, T*)> cb);
   // Writes a vector of simple types to the given file. Assumes that bitwise
   // read/write of T will work. Returns false in case of error.
   // TODO(rays) Change all callers to use TFile and remove deprecated methods.
@@ -282,33 +286,6 @@ class GenericVector {
     size_used_ = last_write + 1;
   }
 
-  // Compact the vector by deleting elements for which delete_cb returns
-  // true. delete_cb is a permanent callback and will be deleted.
-  void compact(TessResultCallback1<bool, int>* delete_cb) {
-    int new_size = 0;
-    int old_index = 0;
-    // Until the callback returns true, the elements stay the same.
-    while (old_index < size_used_ && !delete_cb->Run(old_index++)) {
-      ++new_size;
-    }
-    // Now just copy anything else that gets false from delete_cb.
-    for (; old_index < size_used_; ++old_index) {
-      if (!delete_cb->Run(old_index)) {
-        data_[new_size++] = data_[old_index];
-      }
-    }
-    size_used_ = new_size;
-    delete delete_cb;
-  }
-
-  T dot_product(const GenericVector<T>& other) const {
-    T result = static_cast<T>(0);
-    for (int i = std::min(size_used_, other.size_used_) - 1; i >= 0; --i) {
-      result += data_[i] * other.data_[i];
-    }
-    return result;
-  }
-
   // Returns the index of what would be the target_index_th item in the array
   // if the members were sorted, without actually sorting. Members are
   // shuffled around, but it takes O(n) time.
@@ -357,19 +334,12 @@ class GenericVector {
   int32_t size_used_{};
   int32_t size_reserved_{};
   T* data_;
-  TessCallback1<T>* clear_cb_;
-  // Mutable because Run method is not const
-  mutable TessResultCallback2<bool, T const&, T const&>* compare_cb_;
+  std::function<void(T)> clear_cb_;
+  std::function<bool(const T&, const T&)> compare_cb_;
 };
 
 namespace tesseract {
 
-// Function to read a GenericVector<char> from a whole file.
-// Returns false on failure.
-using FileReader = bool (*)(const STRING&, GenericVector<char>*);
-// Function to write a GenericVector<char> to a whole file.
-// Returns false on failure.
-using FileWriter = bool (*)(const GenericVector<char>&, const STRING&);
 // The default FileReader loads the whole file into the vector of char,
 // returning false on error.
 inline bool LoadDataFromFile(const char* filename, GenericVector<char>* data) {
@@ -513,17 +483,17 @@ class PointerVector : public GenericVector<T*> {
 
   // Compact the vector by deleting elements for which delete_cb returns
   // true. delete_cb is a permanent callback and will be deleted.
-  void compact(TessResultCallback1<bool, const T*>* delete_cb) {
+  void compact(std::function<bool(const T*)> delete_cb) {
     int new_size = 0;
     int old_index = 0;
     // Until the callback returns true, the elements stay the same.
     while (old_index < GenericVector<T*>::size_used_ &&
-           !delete_cb->Run(GenericVector<T*>::data_[old_index++])) {
+           !delete_cb(GenericVector<T*>::data_[old_index++])) {
       ++new_size;
     }
     // Now just copy anything else that gets false from delete_cb.
     for (; old_index < GenericVector<T*>::size_used_; ++old_index) {
-      if (!delete_cb->Run(GenericVector<T*>::data_[old_index])) {
+      if (!delete_cb(GenericVector<T*>::data_[old_index])) {
         GenericVector<T*>::data_[new_size++] =
             GenericVector<T*>::data_[old_index];
       } else {
@@ -531,7 +501,6 @@ class PointerVector : public GenericVector<T*> {
       }
     }
     GenericVector<T*>::size_used_ = new_size;
-    delete delete_cb;
   }
 
   // Clear the array, calling the clear callback function if any.
@@ -691,12 +660,14 @@ template <typename T>
 class GenericVectorEqEq : public GenericVector<T> {
  public:
   GenericVectorEqEq() {
+    using namespace std::placeholders;  // for _1
     GenericVector<T>::set_compare_callback(
-        NewPermanentTessCallback(tesseract::cmp_eq<T>));
+      std::bind(tesseract::cmp_eq<T>, _1, _2));
   }
   explicit GenericVectorEqEq(int size) : GenericVector<T>(size) {
+    using namespace std::placeholders;  // for _1
     GenericVector<T>::set_compare_callback(
-        NewPermanentTessCallback(tesseract::cmp_eq<T>));
+      std::bind(tesseract::cmp_eq<T>, _1, _2));
   }
 };
 
@@ -830,7 +801,7 @@ template <typename T>
 int GenericVector<T>::get_index(const T& object) const {
   for (int i = 0; i < size_used_; ++i) {
     assert(compare_cb_ != nullptr);
-    if (compare_cb_->Run(object, data_[i])) {
+    if (compare_cb_(object, data_[i])) {
       return i;
     }
   }
@@ -901,36 +872,19 @@ GenericVector<T>& GenericVector<T>::operator=(const GenericVector& other) {
   return *this;
 }
 
-// Add a callback to be called to delete the elements when the array took
-// their ownership.
-template <typename T>
-void GenericVector<T>::set_clear_callback(TessCallback1<T>* cb) {
-  clear_cb_ = cb;
-}
-
-// Add a callback to be called to delete the elements when the array took
-// their ownership.
-template <typename T>
-void GenericVector<T>::set_compare_callback(
-    TessResultCallback2<bool, T const&, T const&>* cb) {
-  compare_cb_ = cb;
-}
-
 // Clear the array, calling the callback function if any.
 template <typename T>
 void GenericVector<T>::clear() {
   if (size_reserved_ > 0 && clear_cb_ != nullptr) {
     for (int i = 0; i < size_used_; ++i) {
-      clear_cb_->Run(data_[i]);
+      clear_cb_(data_[i]);
     }
   }
   delete[] data_;
   data_ = nullptr;
   size_used_ = 0;
   size_reserved_ = 0;
-  delete clear_cb_;
   clear_cb_ = nullptr;
-  delete compare_cb_;
   compare_cb_ = nullptr;
 }
 
@@ -943,7 +897,7 @@ void GenericVector<T>::delete_data_pointers() {
 
 template <typename T>
 bool GenericVector<T>::write(
-    FILE* f, TessResultCallback2<bool, FILE*, T const&>* cb) const {
+    FILE* f, std::function<bool(FILE*, const T&)> cb) const {
   if (fwrite(&size_reserved_, sizeof(size_reserved_), 1, f) != 1) {
     return false;
   }
@@ -952,12 +906,10 @@ bool GenericVector<T>::write(
   }
   if (cb != nullptr) {
     for (int i = 0; i < size_used_; ++i) {
-      if (!cb->Run(f, data_[i])) {
-        delete cb;
+      if (!cb(f, data_[i])) {
         return false;
       }
     }
-    delete cb;
   } else {
     if (fwrite(data_, sizeof(T), size_used_, f) != unsigned_size()) {
       return false;
@@ -968,7 +920,7 @@ bool GenericVector<T>::write(
 
 template <typename T>
 bool GenericVector<T>::read(
-    tesseract::TFile* f, TessResultCallback2<bool, tesseract::TFile*, T*>* cb) {
+    tesseract::TFile* f, std::function<bool(tesseract::TFile*, T*)> cb) {
   int32_t reserved;
   if (f->FReadEndian(&reserved, sizeof(reserved), 1) != 1) {
     return false;
@@ -979,12 +931,10 @@ bool GenericVector<T>::read(
   }
   if (cb != nullptr) {
     for (int i = 0; i < size_used_; ++i) {
-      if (!cb->Run(f, data_ + i)) {
-        delete cb;
+      if (!cb(f, data_ + i)) {
         return false;
       }
     }
-    delete cb;
   } else {
     if (f->FReadEndian(data_, sizeof(T), size_used_) != size_used_) {
       return false;

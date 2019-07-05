@@ -18,8 +18,9 @@
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
 
+#define _USE_MATH_DEFINES  // for M_PI
 #include <algorithm>
-#include <cmath>           // for std::floor
+#include <cmath>           // for M_PI, std::floor
 #include <cstdio>
 #include <cassert>
 
@@ -171,31 +172,31 @@ int TruncateParam(float Param, int Min, int Max, char *Id);
 -----------------------------------------------------------------------------*/
 
 /* global display lists used to display proto and feature match information*/
-ScrollView *IntMatchWindow = nullptr;
-ScrollView *FeatureDisplayWindow = nullptr;
-ScrollView *ProtoDisplayWindow = nullptr;
+static ScrollView* IntMatchWindow = nullptr;
+static ScrollView* FeatureDisplayWindow = nullptr;
+static ScrollView* ProtoDisplayWindow = nullptr;
 
 /*-----------------------------------------------------------------------------
         Variables
 -----------------------------------------------------------------------------*/
 
 /* control knobs */
-INT_VAR(classify_num_cp_levels, 3, "Number of Class Pruner Levels");
-double_VAR(classify_cp_angle_pad_loose, 45.0,
-           "Class Pruner Angle Pad Loose");
-double_VAR(classify_cp_angle_pad_medium, 20.0,
-           "Class Pruner Angle Pad Medium");
-double_VAR(classify_cp_angle_pad_tight, 10.0,
-           "CLass Pruner Angle Pad Tight");
-double_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
-double_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
-double_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
-double_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
-double_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
-double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
-double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
-double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
-double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
+static INT_VAR(classify_num_cp_levels, 3, "Number of Class Pruner Levels");
+static double_VAR(classify_cp_angle_pad_loose, 45.0,
+                  "Class Pruner Angle Pad Loose");
+static double_VAR(classify_cp_angle_pad_medium, 20.0,
+                  "Class Pruner Angle Pad Medium");
+static double_VAR(classify_cp_angle_pad_tight, 10.0,
+                  "CLass Pruner Angle Pad Tight");
+static double_VAR(classify_cp_end_pad_loose, 0.5, "Class Pruner End Pad Loose");
+static double_VAR(classify_cp_end_pad_medium, 0.5, "Class Pruner End Pad Medium");
+static double_VAR(classify_cp_end_pad_tight, 0.5, "Class Pruner End Pad Tight");
+static double_VAR(classify_cp_side_pad_loose, 2.5, "Class Pruner Side Pad Loose");
+static double_VAR(classify_cp_side_pad_medium, 1.2, "Class Pruner Side Pad Medium");
+static double_VAR(classify_cp_side_pad_tight, 0.6, "Class Pruner Side Pad Tight");
+static double_VAR(classify_pp_angle_pad, 45.0, "Proto Pruner Angle Pad");
+static double_VAR(classify_pp_end_pad, 0.5, "Proto Prune End Pad");
+static double_VAR(classify_pp_side_pad, 2.5, "Proto Pruner Side Pad");
 
 /*-----------------------------------------------------------------------------
               Public Code
@@ -932,12 +933,13 @@ INT_TEMPLATES Classify::ReadIntTemplates(TFile *fp) {
     }
   }
   if (version_id >= 4) {
-    this->fontinfo_table_.read(fp, NewPermanentTessCallback(read_info));
+    using namespace std::placeholders; // for _1, _2
+    this->fontinfo_table_.read(fp, std::bind(read_info, _1, _2));
     if (version_id >= 5) {
       this->fontinfo_table_.read(fp,
-                                 NewPermanentTessCallback(read_spacing_info));
+                                 std::bind(read_spacing_info, _1, _2));
     }
-    this->fontset_table_.read(fp, NewPermanentTessCallback(read_set));
+    this->fontset_table_.read(fp, std::bind(read_set, _1, _2));
   }
 
   // Clean up.
@@ -1066,10 +1068,11 @@ void Classify::WriteIntTemplates(FILE *File, INT_TEMPLATES Templates,
   }
 
   /* Write the fonts info tables */
-  this->fontinfo_table_.write(File, NewPermanentTessCallback(write_info));
+  using namespace std::placeholders; // for _1, _2
+  this->fontinfo_table_.write(File, std::bind(write_info, _1, _2));
   this->fontinfo_table_.write(File,
-                              NewPermanentTessCallback(write_spacing_info));
-  this->fontset_table_.write(File, NewPermanentTessCallback(write_set));
+                              std::bind(write_spacing_info, _1, _2));
+  this->fontset_table_.write(File, std::bind(write_set, _1, _2));
 }                                /* WriteIntTemplates */
 } // namespace tesseract
 

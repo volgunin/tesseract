@@ -295,7 +295,7 @@ static std::string ScrollViewCommand(std::string scrollview_path) {
   // this unnecessary.
   // Also the path has to be separated by ; on windows and : otherwise.
 #ifdef _WIN32
-  const char cmd_template[] = "-Djava.library.path=%s -jar %s/ScrollView.jar";
+  const char cmd_template[] = "-Djava.library.path=\"%s\" -jar \"%s/ScrollView.jar\"";
 
 #else
   const char cmd_template[] =
@@ -314,18 +314,6 @@ static std::string ScrollViewCommand(std::string scrollview_path) {
   std::string command(&cmd[0]);
   return command;
 }
-
-
-// Platform-independent freeaddrinfo()
-static void TessFreeAddrInfo(struct addrinfo* addr_info) {
-  #if defined(__linux__)
-  freeaddrinfo(addr_info);
-  #else
-  delete addr_info->ai_addr;
-  delete addr_info;
-  #endif
-}
-
 
 // Set up a connection to a ScrollView on hostname:port.
 SVNetwork::SVNetwork(const char* hostname, int port) {

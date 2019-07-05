@@ -1,9 +1,15 @@
 AM_CPPFLAGS += \
     -I$(top_srcdir)/src/ccutil \
     -I$(top_srcdir)/src/cutil \
+    -I$(top_srcdir)/src/dict \
+    -I$(top_srcdir)/src/wordrec \
     -I$(top_srcdir)/src/viewer \
     -I$(top_srcdir)/src/opencl
 AM_CPPFLAGS += $(OPENCL_CPPFLAGS)
+
+if DISABLED_LEGACY_ENGINE
+AM_CPPFLAGS += -DDISABLED_LEGACY_ENGINE
+endif
 
 if VISIBILITY
 AM_CPPFLAGS += -DTESS_EXPORTS \

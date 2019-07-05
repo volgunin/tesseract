@@ -16,6 +16,8 @@
  *
  **********************************************************************/
 
+#define _USE_MATH_DEFINES // for M_PI
+
 // Include automatically generated configuration file if running autoconf.
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
@@ -27,10 +29,6 @@
 #endif
 
 #if defined(_WIN32)
-#if defined(__MINGW32__)
-// workaround for stdlib.h with -std=c++11 for _splitpath and _MAX_FNAME
-#undef __STRICT_ANSI__
-#endif  // __MINGW32__
 #include <fcntl.h>
 #include <io.h>
 #else
@@ -63,9 +61,8 @@
 #include "environ.h"           // for l_uint8
 #include "equationdetect.h"    // for EquationDetect
 #include "errcode.h"           // for ASSERT_HOST
-#include "globaloc.h"          // for SavePixForCrash, signal_exit
 #include "helpers.h"           // for IntCastRounded, chomp_string
-#include "imageio.h"           // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3
+#include "imageio.h"           // for IFF_TIFF_G4, IFF_TIFF, IFF_TIFF_G3, ...
 #ifndef DISABLED_LEGACY_ENGINE
 #include "intfx.h"             // for INT_FX_RESULT_STRUCT
 #endif
@@ -93,7 +90,7 @@
 #include "tprintf.h"           // for tprintf
 #include "werd.h"              // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 
-BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
+static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
 
 namespace tesseract {
 
@@ -109,11 +106,11 @@ const char kUNLVSuspect = '^';
  * Filename used for input image file, from which to derive a name to search
  * for a possible UNLV zone file, if none is specified by SetInputName.
  */
-const char* kInputFile = "noname.tif";
+static const char* kInputFile = "noname.tif";
 /**
  * Temp file used for storing current parameters before applying retry values.
  */
-const char* kOldVarsFile = "failed_vars.txt";
+static const char* kOldVarsFile = "failed_vars.txt";
 /** Max string length of an int.  */
 const int kMaxIntSize = 22;
 
@@ -250,25 +247,6 @@ size_t TessBaseAPI::getOpenCLDevice(void **data) {
 
   *data = nullptr;
   return 0;
-}
-
-/**
- * Writes the thresholded image to stderr as a PBM file on receipt of a
- * SIGSEGV, SIGFPE, or SIGBUS signal. (Linux/Unix only).
- */
-void TessBaseAPI::CatchSignals() {
-#ifdef __linux__
-  struct sigaction action;
-  memset(&action, 0, sizeof(action));
-  action.sa_handler = &signal_exit;
-  action.sa_flags = SA_RESETHAND;
-  sigaction(SIGSEGV, &action, nullptr);
-  sigaction(SIGFPE, &action, nullptr);
-  sigaction(SIGBUS, &action, nullptr);
-#else
-  // Warn API users that an implementation is needed.
-  tprintf("CatchSignals has no non-linux implementation!\n");
-#endif
 }
 
 /**
@@ -725,24 +703,23 @@ Boxa* TessBaseAPI::GetComponentImages(PageIteratorLevel level,
   int component_count = 0;
   int left, top, right, bottom;
 
-  TessResultCallback<bool>* get_bbox = nullptr;
   if (raw_image) {
     // Get bounding box in original raw image with padding.
-    get_bbox = NewPermanentTessCallback(page_it, &PageIterator::BoundingBox,
-                                        level, raw_padding,
-                                        &left, &top, &right, &bottom);
+    do {
+      if (page_it->BoundingBox(level, raw_padding,
+                               &left, &top, &right, &bottom) &&
+          (!text_only || PTIsTextType(page_it->BlockType())))
+        ++component_count;
+    } while (page_it->Next(level));
   } else {
     // Get bounding box from binarized imaged. Note that this could be
     // differently scaled from the original image.
-    get_bbox = NewPermanentTessCallback(page_it,
-                                        &PageIterator::BoundingBoxInternal,
-                                        level, &left, &top, &right, &bottom);
+    do {
+      if (page_it->BoundingBoxInternal(level, &left, &top, &right, &bottom) &&
+          (!text_only || PTIsTextType(page_it->BlockType())))
+        ++component_count;
+    } while (page_it->Next(level));
   }
-  do {
-    if (get_bbox->Run() &&
-        (!text_only || PTIsTextType(page_it->BlockType())))
-      ++component_count;
-  } while (page_it->Next(level));
 
   Boxa* boxa = boxaCreate(component_count);
   if (pixa != nullptr)
@@ -757,7 +734,15 @@ Boxa* TessBaseAPI::GetComponentImages(PageIteratorLevel level,
   int component_index = 0;
   page_it->Begin();
   do {
-    if (get_bbox->Run() &&
+    bool got_bounding_box;
+    if (raw_image) {
+      got_bounding_box =
+        page_it->BoundingBox(level, raw_padding, &left, &top, &right, &bottom);
+    } else {
+      got_bounding_box =
+        page_it->BoundingBoxInternal(level, &left, &top, &right, &bottom);
+    }
+    if (got_bounding_box &&
         (!text_only || PTIsTextType(page_it->BlockType()))) {
       Box* lbox = boxCreate(left, top, right - left, bottom - top);
       boxaAddBox(boxa, lbox, L_INSERT);
@@ -788,7 +773,6 @@ Boxa* TessBaseAPI::GetComponentImages(PageIteratorLevel level,
     }
   } while (page_it->Next(level));
   delete page_it;
-  delete get_bbox;
   return boxa;
 }
 
@@ -882,8 +866,8 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
             page_res_, tesseract_, thresholder_->GetScaleFactor(),
             thresholder_->GetScaledYResolution(),
             rect_left_, rect_top_, rect_width_, rect_height_);
-    truth_cb_->Run(tesseract_->getDict().getUnicharset(),
-                   image_height_, page_it, this->tesseract()->pix_grey());
+    truth_cb_(tesseract_->getDict().getUnicharset(),
+              image_height_, page_it, this->tesseract()->pix_grey());
     delete page_it;
   }
 
@@ -1050,10 +1034,14 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data,
   int page = (tessedit_page_number >= 0) ? tessedit_page_number : 0;
   size_t offset = 0;
   for (; ; ++page) {
-    if (tessedit_page_number >= 0)
+    if (tessedit_page_number >= 0) {
       page = tessedit_page_number;
-    pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
-                 : pixReadFromMultipageTiff(filename, &offset);
+      pix = (data) ? pixReadMemTiff(data, size, page)
+                   : pixReadTiff(filename, page);
+    } else {
+      pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
+                   : pixReadFromMultipageTiff(filename, &offset);
+    }
     if (pix == nullptr) break;
     tprintf("Page %d\n", page + 1);
     char page_str[kMaxIntSize];
@@ -1166,6 +1154,9 @@ bool TessBaseAPI::ProcessPagesInternal(const char* filename,
   bool tiff = (format == IFF_TIFF || format == IFF_TIFF_PACKBITS ||
                format == IFF_TIFF_RLE || format == IFF_TIFF_G3 ||
                format == IFF_TIFF_G4 || format == IFF_TIFF_LZW ||
+#if LIBLEPT_MAJOR_VERSION > 1 || LIBLEPT_MINOR_VERSION > 76
+               format == IFF_TIFF_JPEG ||
+#endif
                format == IFF_TIFF_ZIP);
 
   // Fail early if we can, before producing any output
@@ -2025,7 +2016,6 @@ bool TessBaseAPI::Threshold(Pix** pix) {
             thresholder_->GetScaledEstimatedResolution(), estimated_res);
   }
   tesseract_->set_source_resolution(estimated_res);
-  SavePixForCrash(estimated_res, *pix);
   return true;
 }
 
@@ -2122,7 +2112,6 @@ void TessBaseAPI::ClearResults() {
     delete paragraph_models_;
     paragraph_models_ = nullptr;
   }
-  SavePixForCrash(0, nullptr);
 }
 
 /**

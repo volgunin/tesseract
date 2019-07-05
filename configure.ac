@@ -99,7 +99,7 @@ case "${host_os}" in
         OPENCL_INC=""
         AM_CONDITIONAL([ADD_RT], false)
         ;;
-    *android*)
+    *android*|openbsd*)
         AM_CONDITIONAL([ADD_RT], false)
         ;;
     powerpc-*-darwin*)
@@ -111,10 +111,12 @@ case "${host_os}" in
         ;;
 esac
 
-# The test code used by AX_CHECK_COMPILE_FLAG uses macros which are unused.
-# That must not break the check, so disable a related warning if necessary.
 WERROR=-Werror
-AX_CHECK_COMPILE_FLAG([-Wno-unused-macros], [WERROR="$WERROR -Wno-unused-macros"])
+# The test code used by AX_CHECK_COMPILE_FLAG uses an empty statement
+# and unused macros which must not raise a compiler error, but it must
+# be an error if flags like -avx are ignored on ARM and other
+# architectures because they are unsupported.
+AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=unused-command-line-argument])
 
 ## Checks for supported compiler options.
 
@@ -163,16 +165,6 @@ AC_ARG_ENABLE([legacy],
 AC_MSG_RESULT([$enable_legacy])
 AM_CONDITIONAL([DISABLED_LEGACY_ENGINE], test "$enable_legacy" = "no")
 
-# check whether to build embedded version
-AC_MSG_CHECKING([--enable-embedded argument])
-AC_ARG_ENABLE([embedded],
-    AS_HELP_STRING([--enable-embedded], [enable embedded build [default=no]]))
-AC_MSG_RESULT([$enable_embedded])
-AM_CONDITIONAL([EMBEDDED], [test "$enable_embedded" = "yes"])
-if test "$enable_embedded" = "yes"; then
-  AM_CPPFLAGS="-DEMBEDDED $AM_CPPFLAGS"
-fi
-
 # check whether to build OpenMP support
 AC_OPENMP
 
@@ -192,6 +184,25 @@ if test "$enable_opencl" = "yes"; then
     AC_CHECK_HEADERS(OpenCL/cl.h, [have_opencl=true], [have_opencl=false])
   ])
 fi
+
+# Check whether to build with support for TensorFlow.
+AC_ARG_WITH([tensorflow],
+  AS_HELP_STRING([--with-tensorflow],
+                 [support TensorFlow @<:@default=check@:>@]),
+  [], [with_tensorflow=check])
+AM_CONDITIONAL([TENSORFLOW], false)
+TENSORFLOW_LIBS=
+AS_IF([test "x$with_tensorflow" != xno],
+  [AC_CHECK_HEADERS(["tensorflow/core/framework/graph.pb.h"],
+    [AC_SUBST([TENSORFLOW_LIBS], ["-lprotobuf -ltensorflow_cc"])
+      AM_CONDITIONAL([TENSORFLOW], true)
+    ],
+    [if test "x$with_tensorflow" != xcheck; then
+      AC_MSG_FAILURE(
+        [--with-tensorflow was given, but test for libtensorflow-dev failed])
+     fi
+    ])
+  ])
 
 # https://lists.apple.com/archives/unix-porting/2009/Jan/msg00026.html
 m4_define([MY_CHECK_FRAMEWORK],
@@ -329,33 +340,25 @@ dnl Turn on C++11 or newer
 dnl **********************
 
 CPLUSPLUS=
-
-AX_CHECK_COMPILE_FLAG([-std=c++11], [cplusplus11=true], [cplusplus11=false], [$WERROR])
-if $cplusplus11; then
-  CPLUSPLUS=11
-fi
-
-AX_CHECK_COMPILE_FLAG([-std=c++14], [cplusplus14=true], [cplusplus14=false], [$WERROR])
-if $cplusplus14; then
-  CPLUSPLUS=14
-fi
+AX_CHECK_COMPILE_FLAG([-std=c++11], [CPLUSPLUS=11], [], [$WERROR])
+AX_CHECK_COMPILE_FLAG([-std=c++14], [CPLUSPLUS=14], [], [$WERROR])
+AX_CHECK_COMPILE_FLAG([-std=c++17], [CPLUSPLUS=17], [], [$WERROR])
+#AX_CHECK_COMPILE_FLAG([-std=c++20], [CPLUSPLUS=20], [], [$WERROR])
 
 if test -z "$CPLUSPLUS"; then
   AC_MSG_ERROR([Your compiler does not have the necessary C++11 support! Cannot proceed.])
 fi
 
-# Set C++11 or C++14 support based on platform/compiler
+# Set C++11, C++14 or C++17 support based on platform/compiler
 case "${host_os}" in
   cygwin*)
     CXXFLAGS="$CXXFLAGS -std=gnu++$CPLUSPLUS"
     ;;
   *-darwin* | *-macos10*)
-     if test "x$CLANG" = "xyes"; then
-       CXXFLAGS="$CXXFLAGS -std=c++$CPLUSPLUS"
-       LDFLAGS="$LDFLAGS -stdlib=libc++"
-     else
-       CXXFLAGS="$CXXFLAGS -std=c++$CPLUSPLUS"
-     fi
+    CXXFLAGS="$CXXFLAGS -std=c++$CPLUSPLUS"
+    if test "x$CLANG" = "xyes"; then
+      LDFLAGS="$LDFLAGS -stdlib=libc++"
+    fi
     ;;
   *)
     # default
@@ -428,12 +431,10 @@ AM_CONDITIONAL([ENABLE_TRAINING], true)
 PKG_CHECK_MODULES([ICU_UC], [icu-uc >= 52.1], [have_icu_uc=true], [have_icu_uc=false])
 PKG_CHECK_MODULES([ICU_I18N], [icu-i18n >= 52.1], [have_icu_i18n=true], [have_icu_i18n=false])
 if !($have_icu_uc && $have_icu_i18n); then
-  if !($have_icu); then
-        AC_MSG_WARN([icu 52.1 or higher is required, but was not found.])
-        AC_MSG_WARN([Training tools WILL NOT be built.])
-        AC_MSG_WARN([Try to install libicu-devel package.])
-        AM_CONDITIONAL([ENABLE_TRAINING], false)
-  fi
+  AC_MSG_WARN([icu 52.1 or higher is required, but was not found.])
+  AC_MSG_WARN([Training tools WILL NOT be built.])
+  AC_MSG_WARN([Try to install libicu-devel package.])
+  AM_CONDITIONAL([ENABLE_TRAINING], false)
 else
   CPPFLAGS="$CPPFLAGS $ICU_UC_CFLAGS $ICU_I18N_CFLAGS"
 fi

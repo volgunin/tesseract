@@ -15,6 +15,8 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#define _USE_MATH_DEFINES // needed to get definition of M_SQRT1_2
+
 // Include automatically generated configuration file if running autoconf.
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
@@ -48,7 +50,7 @@ const int kMinStallIterations = 10000;
 // before we declare the sub_trainer_ a success and switch to it.
 const double kSubTrainerMarginFraction = 3.0 / 128;
 // Factor to reduce learning rate on divergence.
-const double kLearningRateDecay = sqrt(0.5);
+const double kLearningRateDecay = M_SQRT1_2;
 // LR adjustment iterations.
 const int kNumAdjustmentIterations = 100;
 // How often to add data to the error_graph_.
@@ -72,41 +74,17 @@ const int kTargetYScale = 100;
 LSTMTrainer::LSTMTrainer()
     : randomly_rotate_(false),
       training_data_(0),
-      file_reader_(LoadDataFromFile),
-      file_writer_(SaveDataToFile),
-      checkpoint_reader_(
-          NewPermanentTessCallback(this, &LSTMTrainer::ReadTrainingDump)),
-      checkpoint_writer_(
-          NewPermanentTessCallback(this, &LSTMTrainer::SaveTrainingDump)),
       sub_trainer_(nullptr) {
   EmptyConstructor();
   debug_interval_ = 0;
 }
 
-LSTMTrainer::LSTMTrainer(FileReader file_reader, FileWriter file_writer,
-                         CheckPointReader checkpoint_reader,
-                         CheckPointWriter checkpoint_writer,
-                         const char* model_base, const char* checkpoint_name,
+LSTMTrainer::LSTMTrainer(const char* model_base, const char* checkpoint_name,
                          int debug_interval, int64_t max_memory)
     : randomly_rotate_(false),
       training_data_(max_memory),
-      file_reader_(file_reader),
-      file_writer_(file_writer),
-      checkpoint_reader_(checkpoint_reader),
-      checkpoint_writer_(checkpoint_writer),
-      sub_trainer_(nullptr),
-      mgr_(file_reader) {
+      sub_trainer_(nullptr) {
   EmptyConstructor();
-  if (file_reader_ == nullptr) file_reader_ = LoadDataFromFile;
-  if (file_writer_ == nullptr) file_writer_ = SaveDataToFile;
-  if (checkpoint_reader_ == nullptr) {
-    checkpoint_reader_ =
-        NewPermanentTessCallback(this, &LSTMTrainer::ReadTrainingDump);
-  }
-  if (checkpoint_writer_ == nullptr) {
-    checkpoint_writer_ =
-        NewPermanentTessCallback(this, &LSTMTrainer::SaveTrainingDump);
-  }
   debug_interval_ = debug_interval;
   model_base_ = model_base;
   checkpoint_name_ = checkpoint_name;
@@ -117,8 +95,6 @@ LSTMTrainer::~LSTMTrainer() {
   delete target_win_;
   delete ctc_win_;
   delete recon_win_;
-  delete checkpoint_reader_;
-  delete checkpoint_writer_;
   delete sub_trainer_;
 }
 
@@ -127,9 +103,9 @@ LSTMTrainer::~LSTMTrainer() {
 bool LSTMTrainer::TryLoadingCheckpoint(const char* filename,
                                        const char* old_traineddata) {
   GenericVector<char> data;
-  if (!(*file_reader_)(filename, &data)) return false;
+  if (!LoadDataFromFile(filename, &data)) return false;
   tprintf("Loaded file %s, unpacking...\n", filename);
-  if (!checkpoint_reader_->Run(data, this)) return false;
+  if (!ReadTrainingDump(data, this)) return false;
   StaticShape shape = network_->OutputShape(network_->InputShape());
   if (((old_traineddata == nullptr || *old_traineddata == '\0') &&
        network_->NumOutputs() == recoder_.code_range()) ||
@@ -194,8 +170,8 @@ bool LSTMTrainer::InitNetwork(const STRING& network_spec, int append_index,
 
 // Initializes a trainer from a serialized TFNetworkModel proto.
 // Returns the global step of TensorFlow graph or 0 if failed.
-int LSTMTrainer::InitTensorFlowNetwork(const std::string& tf_proto) {
 #ifdef INCLUDE_TENSORFLOW
+int LSTMTrainer::InitTensorFlowNetwork(const std::string& tf_proto) {
   delete network_;
   TFNetwork* tf_net = new TFNetwork("TensorFlow");
   training_iteration_ = tf_net->InitFromProtoStr(tf_proto);
@@ -206,11 +182,8 @@ int LSTMTrainer::InitTensorFlowNetwork(const std::string& tf_proto) {
   network_ = tf_net;
   ASSERT_HOST(recoder_.code_range() == tf_net->num_classes());
   return training_iteration_;
-#else
-  tprintf("TensorFlow not compiled in! -DINCLUDE_TENSORFLOW\n");
-  return 0;
-#endif
 }
+#endif
 
 // Resets all the iteration counters for fine tuning or traininng a head,
 // where we want the error reporting to reset.
@@ -301,7 +274,8 @@ bool LSTMTrainer::LoadAllTrainingData(const GenericVector<STRING>& filenames,
                                       bool randomly_rotate) {
   randomly_rotate_ = randomly_rotate;
   training_data_.Clear();
-  return training_data_.LoadDocuments(filenames, cache_strategy, file_reader_);
+  return training_data_.LoadDocuments(filenames, cache_strategy,
+                                      LoadDataFromFile);
 }
 
 // Keeps track of best and locally worst char error_rate and launches tests
@@ -343,10 +317,10 @@ bool LSTMTrainer::MaintainCheckpoints(TestCallback tester, STRING* log_msg) {
     if (TransitionTrainingStage(kStageTransitionThreshold)) {
       log_msg->add_str_int(" Transitioned to stage ", CurrentTrainingStage());
     }
-    checkpoint_writer_->Run(NO_BEST_TRAINER, this, &best_trainer_);
+    SaveTrainingDump(NO_BEST_TRAINER, this, &best_trainer_);
     if (error_rate < error_rate_of_last_saved_best_ * kBestCheckpointFraction) {
       STRING best_model_name = DumpFilename();
-      if (!(*file_writer_)(best_trainer_, best_model_name)) {
+      if (!SaveDataToFile(best_trainer_, best_model_name)) {
         *log_msg += " failed to write best model:";
       } else {
         *log_msg += " wrote best model:";
@@ -364,7 +338,7 @@ bool LSTMTrainer::MaintainCheckpoints(TestCallback tester, STRING* log_msg) {
       *log_msg += "\nDivergence! ";
       // Copy best_trainer_ before reading it, as it will get overwritten.
       GenericVector<char> revert_data(best_trainer_);
-      if (checkpoint_reader_->Run(revert_data, this)) {
+      if (ReadTrainingDump(revert_data, this)) {
         LogIterations("Reverted to", log_msg);
         ReduceLearningRates(this, log_msg);
       } else {
@@ -374,18 +348,17 @@ bool LSTMTrainer::MaintainCheckpoints(TestCallback tester, STRING* log_msg) {
       stall_iteration_ = iteration + 2 * (iteration - learning_iteration());
       // Re-save the best trainer with the new learning rates and stall
       // iteration.
-      checkpoint_writer_->Run(NO_BEST_TRAINER, this, &best_trainer_);
+      SaveTrainingDump(NO_BEST_TRAINER, this, &best_trainer_);
     }
   } else {
     // Something interesting happened only if the sub_trainer_ was trained.
     result = sub_trainer_result != STR_NONE;
   }
-  if (checkpoint_writer_ != nullptr && file_writer_ != nullptr &&
-      checkpoint_name_.length() > 0) {
+  if (checkpoint_name_.length() > 0) {
     // Write a current checkpoint.
     GenericVector<char> checkpoint;
-    if (!checkpoint_writer_->Run(FULL, this, &checkpoint) ||
-        !(*file_writer_)(checkpoint, checkpoint_name_)) {
+    if (!SaveTrainingDump(FULL, this, &checkpoint) ||
+        !SaveDataToFile(checkpoint, checkpoint_name_)) {
       *log_msg += " failed to write checkpoint.";
     } else {
       *log_msg += " wrote checkpoint.";
@@ -516,7 +489,7 @@ bool LSTMTrainer::DeSerialize(const TessdataManager* mgr, TFile* fp) {
 void LSTMTrainer::StartSubtrainer(STRING* log_msg) {
   delete sub_trainer_;
   sub_trainer_ = new LSTMTrainer();
-  if (!checkpoint_reader_->Run(best_trainer_, sub_trainer_)) {
+  if (!ReadTrainingDump(best_trainer_, sub_trainer_)) {
     *log_msg += " Failed to revert to previous best for trial!";
     delete sub_trainer_;
     sub_trainer_ = nullptr;
@@ -531,7 +504,7 @@ void LSTMTrainer::StartSubtrainer(STRING* log_msg) {
     stall_iteration_ = learning_iteration() + 2 * stall_offset;
     sub_trainer_->stall_iteration_ = stall_iteration_;
     // Re-save the best trainer with the new learning rates and stall iteration.
-    checkpoint_writer_->Run(NO_BEST_TRAINER, sub_trainer_, &best_trainer_);
+    SaveTrainingDump(NO_BEST_TRAINER, sub_trainer_, &best_trainer_);
   }
 }
 
@@ -924,7 +897,7 @@ bool LSTMTrainer::SaveTraineddata(const STRING& filename) {
   SaveRecognitionDump(&recognizer_data);
   mgr_.OverwriteEntry(TESSDATA_LSTM, &recognizer_data[0],
                       recognizer_data.size());
-  return mgr_.SaveFile(filename, file_writer_);
+  return mgr_.SaveFile(filename, SaveDataToFile);
 }
 
 // Writes the recognizer to memory, so that it can be used for testing later.
@@ -1291,7 +1264,7 @@ STRING LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
     if (tester != nullptr && !worst_model_data_.empty()) {
       mgr_.OverwriteEntry(TESSDATA_LSTM, &worst_model_data_[0],
                           worst_model_data_.size());
-      return tester->Run(worst_iteration_, nullptr, mgr_, CurrentTrainingStage());
+      return tester(worst_iteration_, nullptr, mgr_, CurrentTrainingStage());
     } else {
       return "";
     }
@@ -1308,8 +1281,8 @@ STRING LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
     if (tester != nullptr && !worst_model_data_.empty()) {
       mgr_.OverwriteEntry(TESSDATA_LSTM, &worst_model_data_[0],
                           worst_model_data_.size());
-      result = tester->Run(worst_iteration_, worst_error_rates_, mgr_,
-                           CurrentTrainingStage());
+      result = tester(worst_iteration_, worst_error_rates_, mgr_,
+                      CurrentTrainingStage());
       worst_model_data_.truncate(0);
       best_model_data_ = model_data;
     }
@@ -1335,14 +1308,14 @@ STRING LSTMTrainer::UpdateErrorGraph(int iteration, double error_rate,
       if (!best_model_data_.empty()) {
         mgr_.OverwriteEntry(TESSDATA_LSTM, &best_model_data_[0],
                             best_model_data_.size());
-        result = tester->Run(best_iteration_, best_error_rates_, mgr_,
-                             CurrentTrainingStage());
+        result = tester(best_iteration_, best_error_rates_, mgr_,
+                        CurrentTrainingStage());
       } else if (!worst_model_data_.empty()) {
         // Allow for multiple data points with "worst" error rate.
         mgr_.OverwriteEntry(TESSDATA_LSTM, &worst_model_data_[0],
                             worst_model_data_.size());
-        result = tester->Run(worst_iteration_, worst_error_rates_, mgr_,
-                             CurrentTrainingStage());
+        result = tester(worst_iteration_, worst_error_rates_, mgr_,
+                        CurrentTrainingStage());
       }
       if (result.length() > 0)
         best_model_data_.truncate(0);

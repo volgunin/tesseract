@@ -1,8 +1,7 @@
 /**********************************************************************
  * File:        reject.cpp  (Formerly reject.c)
  * Description: Rejection functions used in tessedit
- * Author:    Phil Cheatle
- * Created:   Wed Sep 23 16:50:21 BST 1992
+ * Author:      Phil Cheatle
  *
  * (C) Copyright 1992, Hewlett-Packard Ltd.
  ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,11 +44,9 @@ int16_t Tesseract::safe_dict_word(const WERD_RES *werd_res) {
 #include "reject.h"
 #include "control.h"
 #include "docqual.h"
-#include "globaloc.h"  // For err_exit.
 #include "helpers.h"
 
 #include "tesseractclass.h"
-
 
 CLISTIZEH (STRING) CLISTIZE (STRING)
 
@@ -161,7 +158,7 @@ void Tesseract::make_reject_map(WERD_RES *word, ROW *row, int16_t pass) {
     }
   } else {
     tprintf("BAD tessedit_reject_mode\n");
-    err_exit();
+    ASSERT_HOST("Fatal error encountered!" == nullptr);
   }
 
   if (tessedit_image_border > -1)
@@ -599,7 +596,7 @@ bool Tesseract::repeated_nonalphanum_wd(WERD_RES* word, ROW* row) {
     if (word->best_choice->unichar_id(i) != uch_id) return false;
   }
 
-  word_char_quality(word, row, &char_quality, &accepted_char_quality);
+  word_char_quality(word, &char_quality, &accepted_char_quality);
 
   if ((word->best_choice->unichar_lengths().length () == char_quality) &&
     (char_quality == accepted_char_quality))

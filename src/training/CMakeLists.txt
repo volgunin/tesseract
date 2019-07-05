@@ -2,10 +2,6 @@
 # tesseract
 #
 
-if (NOT CPPAN_BUILD AND NOT (WIN32 OR CYGWIN))
-    return()
-endif()
-
 if (CPPAN_BUILD)
     set(ICU_FOUND 1)
 endif()
@@ -179,6 +175,8 @@ set(unicharset_training_src
     lang_model_helpers.h
     lstmtester.cpp
     lstmtester.h
+    lstmtrainer.cpp
+    lstmtrainer.h
     normstrngs.cpp
     normstrngs.h
     unicharset_training_utils.cpp

@@ -8,7 +8,7 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 # In-source builds are disabled.
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -46,7 +46,7 @@ string(REGEX REPLACE "^([^.]*)\\..*" "\\1" VERSION_MAJOR ${VERSION_PLAIN})
 string(REGEX REPLACE "^[^.]*\\.([^.]*)\\..*" "\\1" VERSION_MINOR ${VERSION_PLAIN})
 string(REGEX REPLACE "^[^.]*\\.[^.]*\\.([0-9]*).*" "\\1" VERSION_PATCH ${VERSION_PLAIN})
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
-    execute_process(COMMAND git describe --abbrev=4
+    execute_process(COMMAND git --git-dir ${CMAKE_CURRENT_SOURCE_DIR}/.git describe --abbrev=4
         OUTPUT_VARIABLE GIT_REV)
         string(REGEX REPLACE "\n$" "" PACKAGE_VERSION "${GIT_REV}")
 endif()
@@ -71,10 +71,10 @@ message( "Configuring tesseract version ${PACKAGE_VERSION}...")
 option(CPPAN_BUILD "Build with cppan" ON)
 option(OPENMP_BUILD "Build with openmp support" OFF)  # see issue #1662
 option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
-option(EMBEDDED "Enable embedded build " OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
 option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 option(BUILD_TESTS "Build tests" OFF)
+option(USE_SYSTEM_ICU "Use system ICU" OFF)
 
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.cppan)
     set(CPPAN_BUILD OFF)
@@ -88,11 +88,22 @@ endif()
 
 # Check for C++ standard to use
 get_property(known_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
-if(cxx_std_14 IN_LIST known_features)
+if (cxx_std_17 IN_LIST known_features)
+    set(CMAKE_CXX_STANDARD 17)
+elseif (cxx_std_14 IN_LIST known_features)
     set(CMAKE_CXX_STANDARD 14)
 else()  # minimum required standard
     set(CMAKE_CXX_STANDARD 11)
 endif()
+
+# workaround for bad info in CMAKE_CXX_KNOWN_FEATURES for g++ 4.8.4
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    set(CMAKE_CXX_STANDARD 11)
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "6.1.0")
+        set(CMAKE_CXX_STANDARD 14)
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -113,14 +124,17 @@ if (WIN32)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
         endif()
     endif()
+    if(CLANG)
+        set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-command-line-argument")
+    endif()
     set(LIB_Ws2_32 Ws2_32)
 endif()
 
 if (OPENMP_BUILD)
-    if (CLANG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp")
-    else(MSVC)
+    if (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     endif()
 endif()
 
@@ -129,8 +143,6 @@ if (CYGWIN)
 endif()
 
 if (UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
-
     if (NOT ANDROID)
         set(LIB_pthread pthread)
     endif()
@@ -142,27 +154,24 @@ endif()
 #
 ###############################################################################
 
-if(NOT CPPAN_BUILD AND NOT Leptonica_DIR)
-    find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG QUIET)
-    if (NOT Leptonica_FOUND)
-        find_package(PkgConfig QUIET)
-        if(PKG_CONFIG_EXECUTABLE)
-            pkg_check_modules(Leptonica REQUIRED lept>=${MINIMUM_LEPTONICA_VERSION})
-            link_directories(${Leptonica_LIBRARY_DIRS})
-        endif(PKG_CONFIG_EXECUTABLE)
-        # message ("Leptonica: ${Leptonica_LIBRARY_DIRS}, ${Leptonica_FOUND}")
-
-        if (NOT Leptonica_FOUND)
-            message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
-        endif()
-    endif()
-else()
+if(CPPAN_BUILD)
     if (STATIC)
         set(CPPAN_BUILD_SHARED_LIBS 0)
     else()
         set(CPPAN_BUILD_SHARED_LIBS 1)
     endif()
     add_subdirectory(.cppan)
+else()
+    find_package(PkgConfig)
+    if(PKG_CONFIG_EXECUTABLE AND NOT Leptonica_DIR)
+        pkg_check_modules(Leptonica REQUIRED lept>=${MINIMUM_LEPTONICA_VERSION})
+        link_directories(${Leptonica_LIBRARY_DIRS})
+    else()
+        find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED CONFIG)
+    endif()
+    if (NOT Leptonica_FOUND)
+        message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
+    endif(NOT Leptonica_FOUND)
 endif()
 
 find_package(OpenCL QUIET)
@@ -261,10 +270,10 @@ message( STATUS )
 message( STATUS "Build with cppan [CPPAN_BUILD]: ${CPPAN_BUILD}")
 message( STATUS "Build with openmp support [OPENMP_BUILD]: ${OPENMP_BUILD}")
 message( STATUS "Disable disable graphics (ScrollView) [GRAPHICS_DISABLED]: ${GRAPHICS_DISABLED}")
-message( STATUS "Enable embedded build [EMBEDDED]: ${EMBEDDED}")
 message( STATUS "Disable the legacy OCR engine [DISABLED_LEGACY_ENGINE]: ${DISABLED_LEGACY_ENGINE}")
 message( STATUS "Build training tools [BUILD_TRAINING_TOOLS]: ${BUILD_TRAINING_TOOLS}")
 message( STATUS "Build tests [BUILD_TESTS]: ${BUILD_TESTS}")
+message( STATUS "Use system ICU Library [USE_SYSTEM_ICU]: ${USE_SYSTEM_ICU}")
 message( STATUS "--------------------------------------------------------")
 message( STATUS )
 
@@ -426,6 +435,13 @@ endif()
 
 add_executable                  (tesseract ${tesseractmain_src} ${tesseractmain_rsc})
 target_link_libraries           (tesseract libtesseract)
+if (HAVE_TIFFIO_H)
+    target_link_libraries(tesseract tiff)
+endif()
+
+if (OPENMP_BUILD AND UNIX)
+target_link_libraries           (tesseract pthread)
+endif()
 
 ########################################
 
@@ -485,7 +501,6 @@ install(FILES
     src/ccutil/platform.h
     src/ccutil/serialis.h
     src/ccutil/strngs.h
-    src/ccutil/tesscallback.h
     src/ccutil/unichar.h
     src/ccutil/unicharcompress.h
     src/ccutil/unicharmap.h
@@ -499,7 +514,6 @@ install(FILES
     src/lstm/input.h
     src/lstm/lstm.h
     src/lstm/lstmrecognizer.h
-    src/lstm/lstmtrainer.h
     src/lstm/maxpool.h
     src/lstm/networkbuilder.h
     src/lstm/network.h

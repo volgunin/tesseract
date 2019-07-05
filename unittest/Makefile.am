@@ -43,6 +43,10 @@ endif
 AM_CPPFLAGS += -I$(top_srcdir)/src/viewer
 AM_CPPFLAGS += -I$(top_srcdir)/src/wordrec
 AM_CPPFLAGS += -I$(top_srcdir)/abseil
+if TENSORFLOW
+AM_CPPFLAGS += -DINCLUDE_TENSORFLOW
+AM_CPPFLAGS += -I/usr/include/tensorflow
+endif
 
 # Build googletest:
 check_LTLIBRARIES = libgtest.la libgtest_main.la libgmock.la libgmock_main.la
@@ -98,21 +102,27 @@ ABSEIL_LIBS = libabseil.la
 GTEST_LIBS =  libgtest.la libgtest_main.la -lpthread
 GMOCK_LIBS =  libgmock.la libgmock_main.la
 TESS_LIBS = $(top_builddir)/src/api/libtesseract.la $(libarchive_LIBS)
+TESS_LIBS += $(TENSORFLOW_LIBS)
 TRAINING_LIBS = $(top_builddir)/src/training/libtesseract_training.la
 TRAINING_LIBS += $(top_builddir)/src/training/libtesseract_tessopt.la
+TRAINING_LIBS += $(TESS_LIBS)
 AM_CPPFLAGS +=   -isystem $(top_srcdir)/googletest/googletest/include \
                  -isystem $(top_srcdir)/googletest/googlemock/include
 
 check_PROGRAMS = apiexample_test
 check_PROGRAMS += applybox_test
 check_PROGRAMS += baseapi_test
-# check_PROGRAMS += baseapi_thread_test
+if TENSORFLOW
+check_PROGRAMS += baseapi_thread_test
+endif
 check_PROGRAMS += bitvector_test
 check_PROGRAMS += cleanapi_test
 check_PROGRAMS += colpartition_test
 check_PROGRAMS += dawg_test
 check_PROGRAMS += denorm_test
-# check_PROGRAMS += equationdetect_test
+if TENSORFLOW
+check_PROGRAMS += equationdetect_test
+endif
 check_PROGRAMS += fileio_test
 check_PROGRAMS += heap_test
 check_PROGRAMS += imagedata_test
@@ -121,17 +131,17 @@ check_PROGRAMS += intfeaturemap_test
 check_PROGRAMS += intsimdmatrix_test
 check_PROGRAMS += lang_model_test
 check_PROGRAMS += layout_test
-# check_PROGRAMS += ligature_table_test
+check_PROGRAMS += ligature_table_test
 check_PROGRAMS += linlsq_test
 check_PROGRAMS += loadlang_test
 check_PROGRAMS += mastertrainer_test
 check_PROGRAMS += matrix_test
-# check_PROGRAMS += networkio_test
-# check_PROGRAMS += normstrngs_test
+if TENSORFLOW
+check_PROGRAMS += networkio_test
+endif
 check_PROGRAMS += nthitem_test
 check_PROGRAMS += osd_test
 # check_PROGRAMS += pagesegmode_test
-# check_PROGRAMS += pango_font_info_test
 check_PROGRAMS += paragraphs_test
 check_PROGRAMS += params_model_test
 check_PROGRAMS += progress_test
@@ -139,16 +149,18 @@ check_PROGRAMS += qrsequence_test
 check_PROGRAMS += recodebeam_test
 check_PROGRAMS += rect_test
 check_PROGRAMS += resultiterator_test
-# check_PROGRAMS += scanutils_test
+check_PROGRAMS += scanutils_test
 check_PROGRAMS += shapetable_test
-# check_PROGRAMS += stridemap_test
 check_PROGRAMS += stats_test
+if TENSORFLOW
+check_PROGRAMS += stridemap_test
+endif
 check_PROGRAMS += stringrenderer_test
 check_PROGRAMS += tablefind_test
 check_PROGRAMS += tablerecog_test
 check_PROGRAMS += tabvector_test
 # check_PROGRAMS += tatweel_test
-# check_PROGRAMS += textlineprojection_test
+check_PROGRAMS += textlineprojection_test
 check_PROGRAMS += tfile_test
 
 if ENABLE_TRAINING
@@ -157,6 +169,10 @@ check_PROGRAMS += lstm_recode_test
 check_PROGRAMS += lstm_squashed_test
 check_PROGRAMS += lstm_test
 check_PROGRAMS += lstmtrainer_test
+check_PROGRAMS += normstrngs_test
+if TENSORFLOW
+check_PROGRAMS += pango_font_info_test
+endif
 check_PROGRAMS += unichar_test
 check_PROGRAMS += unicharcompress_test
 check_PROGRAMS += unicharset_test
@@ -188,8 +204,10 @@ applybox_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 baseapi_test_SOURCES = baseapi_test.cc
 baseapi_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 
-#baseapi_thread_test_SOURCES = baseapi_thread_test.cc
-#baseapi_thread_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
+if TENSORFLOW
+baseapi_thread_test_SOURCES = baseapi_thread_test.cc
+baseapi_thread_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
+endif
 
 bitvector_test_SOURCES = bitvector_test.cc
 bitvector_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
@@ -201,13 +219,18 @@ colpartition_test_SOURCES = colpartition_test.cc
 colpartition_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 commandlineflags_test_SOURCES = commandlineflags_test.cc
-commandlineflags_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+commandlineflags_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_UC_LIBS)
 
 dawg_test_SOURCES = dawg_test.cc
 dawg_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 denorm_test_SOURCES = denorm_test.cc
 denorm_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+
+if TENSORFLOW
+equationdetect_test_SOURCES = equationdetect_test.cc
+equationdetect_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+endif
 
 fileio_test_SOURCES = fileio_test.cc
 fileio_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
@@ -235,10 +258,16 @@ intsimdmatrix_test_CPPFLAGS += -DSSE4_1
 endif
 
 lang_model_test_SOURCES = lang_model_test.cc
-lang_model_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+lang_model_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 layout_test_SOURCES = layout_test.cc
 layout_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)  $(LEPTONICA_LIBS)
+
+ligature_table_test_SOURCES = ligature_table_test.cc
+ligature_table_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS)
+ligature_table_test_LDADD += $(ICU_I18N_LIBS) $(ICU_UC_LIBS) -lfontconfig
+ligature_table_test_LDADD += -lpangocairo-1.0 -lpangoft2-1.0
+ligature_table_test_LDADD += $(cairo_LIBS) $(pango_LIBS)
 
 linlsq_test_SOURCES = linlsq_test.cc
 linlsq_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
@@ -247,37 +276,55 @@ loadlang_test_SOURCES = loadlang_test.cc
 loadlang_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 
 lstm_recode_test_SOURCES = lstm_recode_test.cc
-lstm_recode_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+lstm_recode_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS)
 
 lstm_squashed_test_SOURCES = lstm_squashed_test.cc
-lstm_squashed_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+lstm_squashed_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS)
 
 lstm_test_SOURCES = lstm_test.cc
-lstm_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS)
+lstm_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS)
 
 lstmtrainer_test_SOURCES = lstmtrainer_test.cc
-lstmtrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS)
+lstmtrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS)
 
 mastertrainer_test_SOURCES = mastertrainer_test.cc
-mastertrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS)
+mastertrainer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS)
 
 matrix_test_SOURCES = matrix_test.cc
 matrix_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
+if TENSORFLOW
+networkio_test_SOURCES = networkio_test.cc
+networkio_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+endif
+
+normstrngs_test_SOURCES = normstrngs_test.cc
+if TENSORFLOW
+normstrngs_test_SOURCES += third_party/utf/rune.c util/utf8/unilib.cc
+endif
+normstrngs_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
 nthitem_test_SOURCES = nthitem_test.cc
 nthitem_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
-#pango_font_info_test_SOURCES = pango_font_info_test.cc
-#pango_font_info_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+osd_test_SOURCES = osd_test.cc
+osd_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
+
+if TENSORFLOW
+pango_font_info_test_SOURCES = pango_font_info_test.cc
+pango_font_info_test_SOURCES += third_party/utf/rune.c
+pango_font_info_test_SOURCES += util/utf8/unicodetext.cc util/utf8/unilib.cc
+pango_font_info_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS)
+pango_font_info_test_LDADD += $(ICU_I18N_LIBS) -lfontconfig
+pango_font_info_test_LDADD += -lpangocairo-1.0 -lpangoft2-1.0
+pango_font_info_test_LDADD += $(cairo_LIBS) $(pango_LIBS)
+endif
 
 paragraphs_test_SOURCES = paragraphs_test.cc
 paragraphs_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
 
 params_model_test_SOURCES = params_model_test.cc
 params_model_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
-
-osd_test_SOURCES = osd_test.cc
-osd_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
 
 progress_test_SOURCES = progress_test.cc
 progress_test_LDFLAGS = $(OPENCL_LDFLAGS) $(LEPTONICA_LIBS)
@@ -287,13 +334,16 @@ qrsequence_test_SOURCES = qrsequence_test.cc
 qrsequence_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
 
 recodebeam_test_SOURCES = recodebeam_test.cc
-recodebeam_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+recodebeam_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 rect_test_SOURCES = rect_test.cc
 rect_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 resultiterator_test_SOURCES = resultiterator_test.cc
-resultiterator_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+resultiterator_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+
+scanutils_test_SOURCES = scanutils_test.cc
+scanutils_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 shapetable_test_SOURCES = shapetable_test.cc
 shapetable_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
@@ -301,8 +351,13 @@ shapetable_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS)
 stats_test_SOURCES = stats_test.cc
 stats_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
+if TENSORFLOW
+stridemap_test_SOURCES = stridemap_test.cc
+stridemap_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
+endif
+
 stringrenderer_test_SOURCES = stringrenderer_test.cc
-stringrenderer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS) -lfontconfig -lpangocairo-1.0 -lpangoft2-1.0 $(cairo_LIBS) $(pango_LIBS)
+stringrenderer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(LEPTONICA_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS) -lfontconfig -lpangocairo-1.0 -lpangoft2-1.0 $(cairo_LIBS) $(pango_LIBS)
 
 tablefind_test_SOURCES = tablefind_test.cc
 tablefind_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
@@ -313,32 +368,35 @@ tablerecog_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 tabvector_test_SOURCES = tabvector_test.cc
 tabvector_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
+textlineprojection_test_SOURCES = textlineprojection_test.cc
+textlineprojection_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TESS_LIBS) $(LEPTONICA_LIBS)
+
 tfile_test_SOURCES = tfile_test.cc
 tfile_test_LDADD = $(GTEST_LIBS) $(TESS_LIBS)
 
 unichar_test_SOURCES = unichar_test.cc
-unichar_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+unichar_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_UC_LIBS)
 
 unicharcompress_test_SOURCES = unicharcompress_test.cc
-unicharcompress_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+unicharcompress_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_UC_LIBS)
 
 unicharset_test_SOURCES = unicharset_test.cc
-unicharset_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+unicharset_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_UC_LIBS)
 
 validate_grapheme_test_SOURCES = validate_grapheme_test.cc
-validate_grapheme_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+validate_grapheme_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 validate_indic_test_SOURCES = validate_indic_test.cc
-validate_indic_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+validate_indic_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 validate_khmer_test_SOURCES = validate_khmer_test.cc
-validate_khmer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+validate_khmer_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 validate_myanmar_test_SOURCES = validate_myanmar_test.cc
-validate_myanmar_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
+validate_myanmar_test_LDADD = $(ABSEIL_LIBS) $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_I18N_LIBS) $(ICU_UC_LIBS)
 
 validator_test_SOURCES = validator_test.cc
-validator_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(TESS_LIBS) $(ICU_UC_LIBS)
+validator_test_LDADD = $(GTEST_LIBS) $(TRAINING_LIBS) $(ICU_UC_LIBS)
 
 # for windows
 if T_WIN

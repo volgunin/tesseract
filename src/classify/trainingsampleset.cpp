@@ -495,8 +495,8 @@ void TrainingSampleSet::KillSample(TrainingSample* sample) {
 
 // Deletes all samples with zero features marked by KillSample.
 void TrainingSampleSet::DeleteDeadSamples() {
-  samples_.compact(
-      NewPermanentTessCallback(this, &TrainingSampleSet::DeleteableSample));
+  using namespace std::placeholders;  // for _1
+  samples_.compact(std::bind(&TrainingSampleSet::DeleteableSample, this, _1));
   num_raw_samples_ = samples_.size();
   // Samples must be re-organized now we have deleted a few.
 }
@@ -618,6 +618,7 @@ void TrainingSampleSet::ComputeCanonicalSamples(const IntFeatureMap& map,
           if (dist > max_dist) {
             max_dist = dist;
             if (dist > max_max_dist) {
+              max_max_dist = dist;
               max_s1 = s1;
               max_s2 = s2;
             }
