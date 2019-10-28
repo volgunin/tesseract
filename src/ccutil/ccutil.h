@@ -35,22 +35,6 @@
 
 namespace tesseract {
 
-class CCUtilMutex {
- public:
-  CCUtilMutex();
-
-  void Lock();
-
-  void Unlock();
- private:
-#ifdef _WIN32
-  HANDLE mutex_;
-#else
-  pthread_mutex_t mutex_;
-#endif
-};
-
-
 class CCUtil {
  public:
   CCUtil();
@@ -87,7 +71,6 @@ class CCUtil {
              "Use ambigs for deciding whether to adapt to a character");
 };
 
-extern CCUtilMutex tprintfMutex;  // should remain global
 }  // namespace tesseract
 
 #endif  // TESSERACT_CCUTIL_CCUTIL_H_

@@ -41,7 +41,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <semaphore.h>
 #include <csignal>
 #include <sys/select.h>
@@ -52,62 +51,9 @@
 #include <unistd.h>
 #endif
 
-SVMutex::SVMutex() {
-#ifdef _WIN32
-  mutex_ = CreateMutex(0, FALSE, 0);
-#else
-  pthread_mutex_init(&mutex_, nullptr);
-#endif
-}
-
-void SVMutex::Lock() {
-#ifdef _WIN32
-  WaitForSingleObject(mutex_, INFINITE);
-#else
-  pthread_mutex_lock(&mutex_);
-#endif
-}
-
-void SVMutex::Unlock() {
-#ifdef _WIN32
-  ReleaseMutex(mutex_);
-#else
-  pthread_mutex_unlock(&mutex_);
-#endif
-}
-
-// Create new thread.
-void SVSync::StartThread(void* (*func)(void*), void* arg) {
-#ifdef _WIN32
-  LPTHREAD_START_ROUTINE f = (LPTHREAD_START_ROUTINE)func;
-  DWORD threadid;
-  CreateThread(nullptr,     // default security attributes
-               0,           // use default stack size
-               f,           // thread function
-               arg,         // argument to thread function
-               0,           // use default creation flags
-               &threadid);  // returns the thread identifier
-#else
-  pthread_t helper;
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_create(&helper, &attr, func, arg);
-#endif
-}
-
 #ifndef GRAPHICS_DISABLED
 
 const int kMaxMsgSize = 4096;
-
-// Signals a thread to exit.
-void SVSync::ExitThread() {
-#ifdef _WIN32
-  // ExitThread(0);
-#else
-  pthread_exit(nullptr);
-#endif
-}
 
 // Starts a new process.
 void SVSync::StartProcess(const char* executable, const char* args) {
@@ -200,19 +146,17 @@ void SVSemaphore::Wait() {
 
 // Place a message in the message buffer (and flush it).
 void SVNetwork::Send(const char* msg) {
-  mutex_send_.Lock();
+  std::lock_guard<std::mutex> guard(mutex_send_);
   msg_buffer_out_.append(msg);
-  mutex_send_.Unlock();
 }
 
 // Send the whole buffer.
 void SVNetwork::Flush() {
-  mutex_send_.Lock();
+  std::lock_guard<std::mutex> guard(mutex_send_);
   while (!msg_buffer_out_.empty()) {
     int i = send(stream_, msg_buffer_out_.c_str(), msg_buffer_out_.length(), 0);
     msg_buffer_out_.erase(0, i);
   }
-  mutex_send_.Unlock();
 }
 
 // Receive a message from the server.

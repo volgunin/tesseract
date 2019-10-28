@@ -69,6 +69,22 @@ static void Win32WarningHandler(const char* module, const char* fmt,
 }
 
 #endif /* HAVE_TIFFIO_H */
+
+class AutoWin32ConsoleOutputCP {
+ public:
+  explicit AutoWin32ConsoleOutputCP(UINT codeCP) {
+    oldCP_ = GetConsoleOutputCP();    
+    SetConsoleOutputCP(codeCP);
+  }
+  ~AutoWin32ConsoleOutputCP() {    
+    SetConsoleOutputCP(oldCP_);    
+  }
+ private:  
+  UINT oldCP_;
+};
+
+static AutoWin32ConsoleOutputCP autoWin32ConsoleOutputCP(CP_UTF8);
+
 #endif   // _WIN32
 
 static void PrintVersionInfo() {
@@ -120,6 +136,7 @@ static void PrintVersionInfo() {
   if (tesseract::SIMDDetect::IsAVX512FAvailable()) printf(" Found AVX512F\n");
   if (tesseract::SIMDDetect::IsAVX2Available()) printf(" Found AVX2\n");
   if (tesseract::SIMDDetect::IsAVXAvailable()) printf(" Found AVX\n");
+  if (tesseract::SIMDDetect::IsFMAAvailable()) printf(" Found FMA\n");
   if (tesseract::SIMDDetect::IsSSEAvailable()) printf(" Found SSE\n");
 #ifdef _OPENMP
   printf(" Found OpenMP %d\n", _OPENMP);

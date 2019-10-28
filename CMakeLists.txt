@@ -69,6 +69,7 @@ set(MINIMUM_LEPTONICA_VERSION 1.74)
 message( "Configuring tesseract version ${PACKAGE_VERSION}...")
 
 option(CPPAN_BUILD "Build with cppan" ON)
+option(SW_BUILD "Build with sw" OFF)
 option(OPENMP_BUILD "Build with openmp support" OFF)  # see issue #1662
 option(GRAPHICS_DISABLED "Disable disable graphics (ScrollView)" OFF)
 option(DISABLED_LEGACY_ENGINE "Disable the legacy OCR engine" OFF)
@@ -76,7 +77,7 @@ option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 option(BUILD_TESTS "Build tests" OFF)
 option(USE_SYSTEM_ICU "Use system ICU" OFF)
 
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.cppan)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.cppan OR SW_BUILD)
     set(CPPAN_BUILD OFF)
 endif()
 
@@ -96,12 +97,14 @@ else()  # minimum required standard
     set(CMAKE_CXX_STANDARD 11)
 endif()
 
-# workaround for bad info in CMAKE_CXX_KNOWN_FEATURES for g++ 4.8.4
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    set(CMAKE_CXX_STANDARD 11)
-    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "6.1.0")
-        set(CMAKE_CXX_STANDARD 14)
-    endif()
+# Avoid using experimental c++1y (c++1z) standard even if the compiler announces cxx14 (cxx17)
+# in CMAKE_CXX_KNOWN_FEATURES and CMAKE_CXX_COMPILE_FEATURES
+# It is the case of clang 3.9, 4.0 (announces c++1z) and gcc 4.8 (announces c++1y)
+if ("${CMAKE_CXX17_STANDARD_COMPILE_OPTION}" STREQUAL "-std=c++1z")
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+if ("${CMAKE_CXX14_STANDARD_COMPILE_OPTION}" STREQUAL "-std=c++1y")
+  set(CMAKE_CXX_STANDARD 11)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -112,22 +115,22 @@ if (STATIC)
     set(LIBRARY_TYPE)
 endif()
 
+# Compiler specific environments
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CLANG 1)
 endif()
-
-if (WIN32)
-    if (MSVC)
-        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
-        if (NOT CLANG)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-        endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -Og")
+elseif(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
+    if (NOT CLANG)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     endif()
-    if(CLANG)
-        set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-command-line-argument")
-    endif()
-    set(LIB_Ws2_32 Ws2_32)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Wall /bigobj")
+elseif(CLANG)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-command-line-argument")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DDEBUG -pedantic -O0")
 endif()
 
 if (OPENMP_BUILD)
@@ -138,14 +141,15 @@ if (OPENMP_BUILD)
     endif()
 endif()
 
+
 if (CYGWIN)
     add_definitions(-D__CYGWIN__)
-endif()
-
-if (UNIX)
+elseif(UNIX)
     if (NOT ANDROID)
         set(LIB_pthread pthread)
     endif()
+elseif(WIN32)
+    set(LIB_Ws2_32 Ws2_32)
 endif()
 
 ###############################################################################
@@ -161,6 +165,24 @@ if(CPPAN_BUILD)
         set(CPPAN_BUILD_SHARED_LIBS 1)
     endif()
     add_subdirectory(.cppan)
+elseif (SW_BUILD)
+    find_package(SW REQUIRED)
+    if (STATIC)
+        set(SW_BUILD_SHARED_LIBS 0)
+    else()
+        set(SW_BUILD_SHARED_LIBS 1)
+    endif()
+    sw_add_package(
+        org.sw.demo.danbloomberg.leptonica-master
+        org.sw.demo.libarchive.libarchive
+    )
+    if (BUILD_TRAINING_TOOLS)
+        sw_add_package(
+            org.sw.demo.gnome.pango.pangocairo
+            org.sw.demo.unicode.icu.i18n
+        )
+    endif()
+    sw_execute()
 else()
     find_package(PkgConfig)
     if(PKG_CONFIG_EXECUTABLE AND NOT Leptonica_DIR)
@@ -172,13 +194,14 @@ else()
     if (NOT Leptonica_FOUND)
         message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
     endif(NOT Leptonica_FOUND)
+
+    find_package(LibArchive)
+    if(LibArchive_FOUND)
+        set(HAVE_LIBARCHIVE ON)
+    endif()
 endif()
 
 find_package(OpenCL QUIET)
-find_package(LibArchive)
-if(LibArchive_FOUND)
-    set(HAVE_LIBARCHIVE ON)
-endif()
 
 
 ###############################################################################
@@ -198,6 +221,7 @@ endforeach()
 # add definition as expected in src/arch/simddetect.cpp
 set(AVX_OPT OFF)
 set(AVX2_OPT OFF)
+set(FMA_OPT OFF)
 set(SSE41_OPT OFF)
 set(MARCH_NATIVE_OPT OFF)
 foreach(flag ${_enable_vector_unit_list})  # from OptimizeForArchitecture()
@@ -205,7 +229,7 @@ foreach(flag ${_enable_vector_unit_list})  # from OptimizeForArchitecture()
     string(REPLACE "\." "_" flag "${flag}")
     set(sim_flags "${sim_flags} -D${flag}")
     string(REPLACE "_" "" flag "${flag}")
-    if("${flag}" MATCHES "AVX|AVX2|SSE41")
+    if("${flag}" MATCHES "AVX|AVX2|FMA|SSE41")
         set("${flag}_OPT" ON)
     endif()
 endforeach(flag)
@@ -263,11 +287,13 @@ message( STATUS "Architecture flags: ${Vc_ARCHITECTURE_FLAGS}")
 message( STATUS "Vector unit list: ${_enable_vector_unit_list}")
 message( STATUS "AVX_OPT: ${AVX_OPT}")
 message( STATUS "AVX2_OPT: ${AVX2_OPT}")
+message( STATUS "FMA_OPT: ${FMA_OPT}")
 message( STATUS "SSE41_OPT: ${SSE41_OPT}")
 message( STATUS "MARCH_NATIVE_OPT: ${MARCH_NATIVE_OPT}")
 message( STATUS "sim_flags: ${sim_flags}")
-message( STATUS )
+message( STATUS "--------------------------------------------------------")
 message( STATUS "Build with cppan [CPPAN_BUILD]: ${CPPAN_BUILD}")
+message( STATUS "Build with sw [SW_BUILD]: ${SW_BUILD}")
 message( STATUS "Build with openmp support [OPENMP_BUILD]: ${OPENMP_BUILD}")
 message( STATUS "Disable disable graphics (ScrollView) [GRAPHICS_DISABLED]: ${GRAPHICS_DISABLED}")
 message( STATUS "Disable the legacy OCR engine [DISABLED_LEGACY_ENGINE]: ${DISABLED_LEGACY_ENGINE}")
@@ -341,6 +367,9 @@ endif(AVX_OPT)
 if(AVX2_OPT)
    list(APPEND tesseract_src src/arch/intsimdmatrixavx2.cpp)
 endif(AVX2_OPT)
+if(FMA_OPT)
+   list(APPEND tesseract_src src/arch/dotproductfma.cpp)
+endif(AVX_OPT)
 if(SSE41_OPT)
    list(APPEND tesseract_src src/arch/dotproductsse.cpp src/arch/intsimdmatrixsse.cpp)
 endif(SSE41_OPT)
@@ -406,6 +435,13 @@ if (CPPAN_BUILD)
     target_link_libraries       (libtesseract PUBLIC
         pvt.cppan.demo.danbloomberg.leptonica
         pvt.cppan.demo.libarchive.libarchive
+    )
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_CURRENT_BINARY_DIR}/cppan.cmake)\n")
+    export(TARGETS libtesseract APPEND FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
+elseif (SW_BUILD)
+    target_link_libraries       (libtesseract PUBLIC
+        org.sw.demo.danbloomberg.leptonica-master
+        org.sw.demo.libarchive.libarchive
     )
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_CURRENT_BINARY_DIR}/cppan.cmake)\n")
     export(TARGETS libtesseract APPEND FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
@@ -475,8 +511,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/api/tess_version.h
 
     #from arch/makefile.am
-    src/arch/dotproductavx.h
-    src/arch/dotproductsse.h
+    src/arch/dotproduct.h
     src/arch/intsimdmatrix.h
     src/arch/simddetect.h
 

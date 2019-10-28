@@ -2,7 +2,6 @@
 // File:        scrollview.h
 // Description: ScrollView
 // Author:      Joern Wanke
-// Created:     Thu Nov 29 2007
 //
 // (C) Copyright 2007, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,10 +34,10 @@
 #ifndef OCR_SCROLLVIEW_H__
 
 #include <cstdio>
+#include <mutex>
 
 class ScrollView;
 class SVNetwork;
-class SVMutex;
 class SVSemaphore;
 struct SVPolyLineBuffer;
 
@@ -362,8 +361,8 @@ class ScrollView {
 // Send the current buffered polygon (if any) and clear it.
   void SendPolygon();
 
-// Start the message receiving thread.
-  static void* MessageReceiver(void* a);
+  // Start the message receiving thread.
+  static void MessageReceiver();
 
 // Place an event into the event_table (synchronized).
   void SetEvent(SVEvent* svevent);
@@ -374,8 +373,9 @@ class ScrollView {
 // Returns the unique, shared network stream.
   static SVNetwork* GetStream() { return stream_; }
 
-// Starts a new event handler. Called whenever a new window is created.
-  static void* StartEventHandler(void* sv);
+  // Starts a new event handler.
+  // Called asynchronously whenever a new window is created.
+  void StartEventHandler();
 
 // Escapes the ' character with a \, so it can be processed by LUA.
   char* AddEscapeChars(const char* input);
@@ -407,7 +407,7 @@ class ScrollView {
   SVEvent* event_table_[SVET_COUNT];
 
   // Mutex to access the event_table_ in a synchronized fashion.
-  SVMutex* mutex_;
+  std::mutex* mutex_;
 
   // Semaphore to the thread belonging to this window.
   SVSemaphore* semaphore_;

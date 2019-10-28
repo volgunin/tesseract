@@ -23,11 +23,8 @@
 
 #include "imagedata.h"
 
-#if defined(__MINGW32__)
-#include <unistd.h>
-#else
-#include <thread>
-#endif
+#include <cinttypes>     // for PRId64
+#include <thread>        // for std::thread
 
 #include "allheaders.h"  // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 #include "boxread.h"     // for ReadMemBoxes
@@ -37,7 +34,6 @@
 #include "scrollview.h"  // for ScrollView, ScrollView::CYAN, ScrollView::NONE
 #include "serialis.h"    // for TFile
 #include "tprintf.h"     // for tprintf
-#include <cinttypes>     // for PRId64
 
 // Number of documents to read ahead while training. Doesn't need to be very
 // large.
@@ -373,13 +369,6 @@ bool ImageData::AddBoxes(const char* box_text) {
   return false;
 }
 
-// Thread function to call ReCachePages.
-void* ReCachePagesFunc(void* data) {
-  auto* document_data = static_cast<DocumentData*>(data);
-  document_data->ReCachePages();
-  return nullptr;
-}
-
 DocumentData::DocumentData(const STRING& name)
     : document_name_(name),
       pages_offset_(-1),
@@ -389,8 +378,8 @@ DocumentData::DocumentData(const STRING& name)
       reader_(nullptr) {}
 
 DocumentData::~DocumentData() {
-  SVAutoLock lock_p(&pages_mutex_);
-  SVAutoLock lock_g(&general_mutex_);
+  std::lock_guard<std::mutex> lock_p(pages_mutex_);
+  std::lock_guard<std::mutex> lock_g(general_mutex_);
 }
 
 // Reads all the pages in the given lstmf filename to the cache. The reader
@@ -405,8 +394,8 @@ bool DocumentData::LoadDocument(const char* filename, int start_page,
 // Sets up the document, without actually loading it.
 void DocumentData::SetDocument(const char* filename, int64_t max_memory,
                                FileReader reader) {
-  SVAutoLock lock_p(&pages_mutex_);
-  SVAutoLock lock(&general_mutex_);
+  std::lock_guard<std::mutex> lock_p(pages_mutex_);
+  std::lock_guard<std::mutex> lock(general_mutex_);
   document_name_ = filename;
   pages_offset_ = -1;
   max_memory_ = max_memory;
@@ -415,7 +404,7 @@ void DocumentData::SetDocument(const char* filename, int64_t max_memory,
 
 // Writes all the pages to the given filename. Returns false on error.
 bool DocumentData::SaveDocument(const char* filename, FileWriter writer) {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   TFile fp;
   fp.OpenWrite(nullptr);
   if (!pages_.Serialize(&fp) || !fp.CloseWrite(filename, writer)) {
@@ -425,7 +414,7 @@ bool DocumentData::SaveDocument(const char* filename, FileWriter writer) {
   return true;
 }
 bool DocumentData::SaveToBuffer(GenericVector<char>* buffer) {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   TFile fp;
   fp.OpenWrite(buffer);
   return pages_.Serialize(&fp);
@@ -433,7 +422,7 @@ bool DocumentData::SaveToBuffer(GenericVector<char>* buffer) {
 
 // Adds the given page data to this document, counting up memory.
 void DocumentData::AddPageToDocument(ImageData* page) {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   pages_.push_back(page);
   set_memory_used(memory_used() + page->MemoryUsed());
 }
@@ -443,11 +432,12 @@ void DocumentData::AddPageToDocument(ImageData* page) {
 void DocumentData::LoadPageInBackground(int index) {
   ImageData* page = nullptr;
   if (IsPageAvailable(index, &page)) return;
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   if (pages_offset_ == index) return;
   pages_offset_ = index;
   pages_.clear();
-  SVSync::StartThread(ReCachePagesFunc, this);
+  std::thread t(&tesseract::DocumentData::ReCachePages, this);
+  t.detach();
 }
 
 // Returns a pointer to the page with the given index, modulo the total
@@ -456,17 +446,13 @@ const ImageData* DocumentData::GetPage(int index) {
   ImageData* page = nullptr;
   while (!IsPageAvailable(index, &page)) {
     // If there is no background load scheduled, schedule one now.
-    pages_mutex_.Lock();
+    pages_mutex_.lock();
     bool needs_loading = pages_offset_ != index;
-    pages_mutex_.Unlock();
+    pages_mutex_.unlock();
     if (needs_loading) LoadPageInBackground(index);
     // We can't directly load the page, or the background load will delete it
     // while the caller is using it, so give it a chance to work.
-#if defined(__MINGW32__)
-    sleep(1);
-#else
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-#endif
+    std::this_thread::yield();
   }
   return page;
 }
@@ -475,7 +461,7 @@ const ImageData* DocumentData::GetPage(int index) {
 // which may be nullptr if the document is empty. May block, even though it
 // doesn't guarantee to return true.
 bool DocumentData::IsPageAvailable(int index, ImageData** page) {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   int num_pages = NumPages();
   if (num_pages == 0 || index < 0) {
     *page = nullptr;  // Empty Document.
@@ -494,7 +480,7 @@ bool DocumentData::IsPageAvailable(int index, ImageData** page) {
 // Removes all pages from memory and frees the memory, but does not forget
 // the document metadata.
 int64_t DocumentData::UnCache() {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   int64_t memory_saved = memory_used();
   pages_.clear();
   pages_offset_ = -1;
@@ -523,7 +509,7 @@ void DocumentData::Shuffle() {
 // Locks the pages_mutex_ and Loads as many pages can fit in max_memory_
 // starting at index pages_offset_.
 bool DocumentData::ReCachePages() {
-  SVAutoLock lock(&pages_mutex_);
+  std::lock_guard<std::mutex> lock(pages_mutex_);
   // Read the file.
   set_total_pages(0);
   set_memory_used(0);
