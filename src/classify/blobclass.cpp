@@ -23,11 +23,9 @@
 #include <cstdio>
 
 #include "classify.h"
-#ifndef DISABLED_LEGACY_ENGINE
 #include "featdefs.h"
 #include "mf.h"
 #include "normfeat.h"
-#endif  // ndef DISABLED_LEGACY_ENGINE
 
 static const char kUnknownFontName[] = "UnknownFont";
 
@@ -38,6 +36,7 @@ namespace tesseract {
 /**----------------------------------------------------------------------------
             Public Code
 ----------------------------------------------------------------------------**/
+
 // Finds the name of the training font and returns it in fontname, by cutting
 // it out based on the expectation that the filename is of the form:
 // /path/to/dir/[lang].[fontname].exp[num]
@@ -48,9 +47,9 @@ void ExtractFontName(const STRING& filename, STRING* fontname) {
   if (*fontname == kUnknownFontName) {
     // filename is expected to be of the form [lang].[fontname].exp[num]
     // The [lang], [fontname] and [num] fields should not have '.' characters.
-    const char *basename = strrchr(filename.string(), '/');
-    const char *firstdot = strchr(basename ? basename : filename.string(), '.');
-    const char *lastdot  = strrchr(filename.string(), '.');
+    const char *basename = strrchr(filename.c_str(), '/');
+    const char *firstdot = strchr(basename ? basename : filename.c_str(), '.');
+    const char *lastdot  = strrchr(filename.c_str(), '.');
     if (firstdot != lastdot && firstdot != nullptr && lastdot != nullptr) {
       ++firstdot;
       *fontname = firstdot;
@@ -61,8 +60,6 @@ void ExtractFontName(const STRING& filename, STRING* fontname) {
 
 
 /*---------------------------------------------------------------------------*/
-
-#ifndef DISABLED_LEGACY_ENGINE
 
 // Extracts features from the given blob and saves them in the tr_file_data_
 // member variable.
@@ -101,7 +98,7 @@ void Classify::LearnBlob(const STRING& fontname, TBLOB* blob,
 bool Classify::WriteTRFile(const STRING& filename) {
   bool result = false;
   STRING tr_filename = filename + ".tr";
-  FILE* fp = fopen(tr_filename.string(), "wb");
+  FILE* fp = fopen(tr_filename.c_str(), "wb");
   if (fp) {
     result =
       tesseract::Serialize(fp, &tr_file_data_[0], tr_file_data_.length());
@@ -110,7 +107,5 @@ bool Classify::WriteTRFile(const STRING& filename) {
   tr_file_data_.truncate_at(0);
   return result;
 }
-
-#endif  // ndef DISABLED_LEGACY_ENGINE
 
 }  // namespace tesseract.

@@ -20,9 +20,9 @@
 #define TESSERACT_IMAGE_IMAGEDATA_H_
 
 #include <mutex>                // for std::mutex
-#include "genericvector.h"      // for GenericVector, PointerVector, FileReader
+#include <tesseract/genericvector.h>      // for GenericVector, PointerVector, FileReader
 #include "points.h"             // for FCOORD
-#include "strngs.h"             // for STRING
+#include <tesseract/strngs.h>             // for STRING
 
 class ScrollView;
 class TBOX;
@@ -232,6 +232,9 @@ class DocumentData {
   int NumPages() const {
     std::lock_guard<std::mutex> lock(general_mutex_);
     return total_pages_;
+  }
+  size_t PagesSize() const {
+    return pages_.size();
   }
   int64_t memory_used() const {
     std::lock_guard<std::mutex> lock(general_mutex_);

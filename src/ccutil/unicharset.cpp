@@ -27,8 +27,8 @@
 #include <sstream>    // for std::istringstream, std::ostringstream
 
 #include "params.h"
-#include "serialis.h"
-#include "unichar.h"
+#include <tesseract/serialis.h>
+#include <tesseract/unichar.h>
 
 // TODO(rays) Move UNICHARSET to tesseract namespace.
 using tesseract::char32;
@@ -373,7 +373,7 @@ void UNICHARSET::set_normed_ids(UNICHAR_ID unichar_id) {
   unichars[unichar_id].properties.normed_ids.truncate(0);
   if (unichar_id == UNICHAR_SPACE && id_to_unichar(unichar_id)[0] == ' ') {
     unichars[unichar_id].properties.normed_ids.push_back(UNICHAR_SPACE);
-  } else if (!encode_string(unichars[unichar_id].properties.normed.string(),
+  } else if (!encode_string(unichars[unichar_id].properties.normed.c_str(),
                             true, &unichars[unichar_id].properties.normed_ids,
                             nullptr, nullptr)) {
     unichars[unichar_id].properties.normed_ids.truncate(0);
@@ -722,49 +722,11 @@ bool UNICHARSET::save_to_string(STRING *str) const {
               this->get_direction(id) << ' ' <<
               this->get_mirror(id) << ' ' <<
               this->get_normed_unichar(id) << "\t# " <<
-              this->debug_str(id).string() << '\n';
+              this->debug_str(id).c_str() << '\n';
       *str += stream.str().c_str();
     }
   }
   return true;
-}
-
-// TODO(rays) Replace with TFile everywhere.
-class InMemoryFilePointer {
- public:
-  InMemoryFilePointer(const char *memory, int mem_size)
-      : memory_(memory), fgets_ptr_(memory), mem_size_(mem_size) { }
-
-  char *fgets(char *orig_dst, int size) {
-    const char *src_end = memory_ + mem_size_;
-    char *dst_end = orig_dst + size - 1;
-    if (size < 1) {
-      return fgets_ptr_ < src_end ? orig_dst : nullptr;
-    }
-
-    char *dst = orig_dst;
-    char ch = '^';
-    while (fgets_ptr_ < src_end && dst < dst_end && ch != '\n') {
-      ch = *dst++ = *fgets_ptr_++;
-    }
-    *dst = 0;
-    return (dst == orig_dst) ? nullptr : orig_dst;
-  }
-
- private:
-  const char *memory_;
-  const char *fgets_ptr_;
-  const int mem_size_;
-};
-
-bool UNICHARSET::load_from_inmemory_file(
-    const char *memory, int mem_size, bool skip_fragments) {
-  InMemoryFilePointer mem_fp(memory, mem_size);
-  using namespace std::placeholders;  // for _1, _2
-  std::function<char*(char*, int)> fgets_cb =
-      std::bind(&InMemoryFilePointer::fgets, &mem_fp, _1, _2);
-  bool success = load_via_fgets(fgets_cb, skip_fragments);
-  return success;
 }
 
 class LocalFilePointer {

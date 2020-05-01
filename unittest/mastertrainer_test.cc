@@ -30,7 +30,7 @@
 
 #include "include_gunit.h"
 
-#include "genericvector.h"
+#include <tesseract/genericvector.h>
 #include "log.h"                        // for LOG
 #include "unicharset.h"
 #include "errorcounter.h"
@@ -285,8 +285,8 @@ TEST_F(MasterTrainerTest, ErrorCounterTest) {
   master_trainer_->TestClassifierOnSamples(tesseract::CT_UNICHAR_TOP1_ERR, 0,
                                            false, shape_classifier,
                                            &accuracy_report);
-  LOG(INFO) << accuracy_report.string();
-  std::string result_string = accuracy_report.string();
+  LOG(INFO) << accuracy_report.c_str();
+  std::string result_string = accuracy_report.c_str();
   std::vector<std::string> results =
       absl::StrSplit(result_string, '\t', absl::SkipEmpty());
   EXPECT_EQ(tesseract::CT_SIZE + 1, results.size());

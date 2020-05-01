@@ -33,7 +33,7 @@
 #include "ocrrow.h"        // for ROW, ROW_IT
 #include "pdblock.h"       // for PDBLK
 #include "polyblk.h"       // for POLY_BLOCK
-#include "publictypes.h"   // for OcrEngineMode, OEM_LSTM_ONLY
+#include <tesseract/publictypes.h>   // for OcrEngineMode, OEM_LSTM_ONLY
 #include "seam.h"          // for SEAM, start_seam_list
 #include "stepblob.h"      // for C_BLOB_IT, C_BLOB, C_BLOB_LIST
 #include "tprintf.h"       // for tprintf
@@ -101,8 +101,6 @@ BLOCK_RES::BLOCK_RES(bool merge_similar_words, BLOCK *the_block) {
   font_class = -1;               //not assigned
   x_height = -1.0;
   font_assigned = false;
-  bold = false;
-  italic = false;
   row_count = 0;
 
   block = the_block;
@@ -257,8 +255,6 @@ void WERD_RES::CopySimpleFields(const WERD_RES& source) {
   unlv_crunch_mode = source.unlv_crunch_mode;
   small_caps = source.small_caps;
   odd_size = source.odd_size;
-  italic = source.italic;
-  bold = source.bold;
   fontinfo = source.fontinfo;
   fontinfo2 = source.fontinfo2;
   fontinfo_id_count = source.fontinfo_id_count;
@@ -493,7 +489,7 @@ void WERD_RES::DebugWordChoices(bool debug, const char* word_to_debug) {
       WERD_CHOICE* choice = it.data();
       STRING label;
       label.add_str_int("\nCooked Choice #", index);
-      choice->print(label.string());
+      choice->print(label.c_str());
     }
   }
 }
@@ -640,7 +636,7 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
         word_choice->string_and_lengths(&bad_string, nullptr);
         tprintf("Discarding choice \"%s\" with an overly low certainty"
                 " %.3f vs best choice certainty %.3f (Threshold: %.3f)\n",
-                bad_string.string(), word_choice->certainty(),
+                bad_string.c_str(), word_choice->certainty(),
                 best_choice->certainty(),
                 max_certainty_delta + best_choice->certainty());
       }
@@ -674,7 +670,7 @@ bool WERD_RES::LogNewCookedChoice(int max_num_choices, bool debug,
           // Old is better.
           if (debug) {
             tprintf("Discarding duplicate choice \"%s\", rating %g vs %g\n",
-                    new_str.string(), word_choice->rating(), choice->rating());
+                    new_str.c_str(), word_choice->rating(), choice->rating());
           }
           delete word_choice;
           return false;
@@ -725,7 +721,7 @@ void WERD_RES::PrintBestChoices() const {
     alternates_str += it.data()->unichar_string();
   }
   tprintf("Alternates for \"%s\": {\"%s\"}\n",
-          best_choice->unichar_string().string(), alternates_str.string());
+          best_choice->unichar_string().c_str(), alternates_str.c_str());
 }
 
 // Returns the sum of the widths of the blob between start_blob and last_blob
@@ -801,7 +797,7 @@ void WERD_RES::ReplaceBestChoice(WERD_CHOICE* choice) {
   SetupBoxWord();
   // Make up a fake reject map of the right length to keep the
   // rejection pass happy.
-  reject_map.initialise(best_state.length());
+  reject_map.initialise(best_state.size());
   done = tess_accepted = tess_would_adapt = true;
   SetScriptPositions();
 }
@@ -904,8 +900,9 @@ void WERD_RES::FakeWordFromRatings(PermuterType permuter) {
   word_choice->set_permuter(permuter);
   for (int b = 0; b < num_blobs; ++b) {
     UNICHAR_ID unichar_id = UNICHAR_SPACE;
-    float rating = INT32_MAX;
-    float certainty = -INT32_MAX;
+    // Initialize rating and certainty like in WERD_CHOICE::make_bad().
+    float rating = WERD_CHOICE::kBadRating;
+    float certainty = -FLT_MAX;
     BLOB_CHOICE_LIST* choices = ratings->get(b, b);
     if (choices != nullptr && !choices->empty()) {
       BLOB_CHOICE_IT bc_it(choices);
@@ -978,7 +975,7 @@ void WERD_RES::MergeAdjacentBlobs(int index) {
   best_choice->remove_unichar_id(index + 1);
   rebuild_word->MergeBlobs(index, index + 2);
   box_word->MergeBoxes(index, index + 2);
-  if (index + 1 < best_state.length()) {
+  if (index + 1 < best_state.size()) {
     best_state[index] += best_state[index + 1];
     best_state.remove(index + 1);
   }
@@ -1091,49 +1088,6 @@ bool WERD_RES::PiecesAllNatural(int start, int count) const {
 
 WERD_RES::~WERD_RES () {
   Clear();
-}
-
-void WERD_RES::InitNonPointers() {
-  tess_failed = false;
-  tess_accepted = false;
-  tess_would_adapt = false;
-  done = false;
-  unlv_crunch_mode = CR_NONE;
-  small_caps = false;
-  odd_size = false;
-  italic = false;
-  bold = false;
-  // The fontinfos and tesseract count as non-pointers as they point to
-  // data owned elsewhere.
-  fontinfo = nullptr;
-  fontinfo2 = nullptr;
-  tesseract = nullptr;
-  fontinfo_id_count = 0;
-  fontinfo_id2_count = 0;
-  x_height = 0.0;
-  caps_height = 0.0;
-  baseline_shift = 0.0f;
-  space_certainty = 0.0f;
-  guessed_x_ht = true;
-  guessed_caps_ht = true;
-  combination = false;
-  part_of_combo = false;
-  reject_spaces = false;
-}
-
-void WERD_RES::InitPointers() {
-  word = nullptr;
-  bln_boxes = nullptr;
-  blob_row = nullptr;
-  uch_set = nullptr;
-  chopped_word = nullptr;
-  rebuild_word = nullptr;
-  box_word = nullptr;
-  ratings = nullptr;
-  best_choice = nullptr;
-  raw_choice = nullptr;
-  ep_choice = nullptr;
-  blamer_bundle = nullptr;
 }
 
 void WERD_RES::Clear() {

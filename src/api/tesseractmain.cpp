@@ -25,12 +25,12 @@
 #include <iostream>
 
 #include "allheaders.h"
-#include "baseapi.h"
+#include <tesseract/baseapi.h>
 #include "dict.h"
 #if defined(USE_OPENCL)
 #include "openclwrapper.h"      // for OpenclDevice
 #endif
-#include "renderer.h"
+#include <tesseract/renderer.h>
 #include "simddetect.h"
 #include "tprintf.h"            // for tprintf
 
@@ -40,6 +40,9 @@
 
 #if defined(HAVE_LIBARCHIVE)
 #include <archive.h>
+#endif
+#if defined(HAVE_LIBCURL)
+#include <curl/curl.h>
 #endif
 
 #if defined(_WIN32)
@@ -148,7 +151,9 @@ static void PrintVersionInfo() {
   printf(" Found %s\n", archive_version_string());
 #  endif  // ARCHIVE_VERSION_NUMBER
 #endif    // HAVE_LIBARCHIVE
-
+#if defined(HAVE_LIBCURL)
+  printf(" Found %s\n", curl_version());
+#endif
 }
 
 static void PrintHelpForPSM() {
@@ -293,7 +298,7 @@ static void PrintLangsList(tesseract::TessBaseAPI* api) {
   printf("List of available languages (%d):\n", languages.size());
   for (int index = 0; index < languages.size(); ++index) {
     STRING& string = languages[index];
-    printf("%s\n", string.string());
+    printf("%s\n", string.c_str());
   }
   api->End();
 }
@@ -565,6 +570,9 @@ static void PreloadRenderers(
 
     api->GetBoolVariable("tessedit_create_txt", &b);
     if (b || (!error && renderers->empty())) {
+      // Create text output if no other output was requested
+      // even if text output was not explicitly requested unless
+      // there was an error.
       auto* renderer =
         new tesseract::TessTextRenderer(outputbase);
       if (renderer->happy()) {
@@ -716,13 +724,15 @@ int main(int argc, char** argv) {
     return ret_val;
   }
 
-  // set in_training_mode to true when using one of these configs:
-  // ambigs.train, box.train, box.train.stderr, linebox, rebox
+  // Set in_training_mode to true when using one of these configs:
+  // ambigs.train, box.train, box.train.stderr, linebox, rebox, lstm.train.
+  // In this mode no other OCR result files are written.
   bool b = false;
   bool in_training_mode =
       (api.GetBoolVariable("tessedit_ambigs_training", &b) && b) ||
       (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
-      (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b);
+      (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b) ||
+      (api.GetBoolVariable("tessedit_train_line_recognizer", &b) && b);
 
 #ifdef DISABLED_LEGACY_ENGINE
   auto cur_psm = api.GetPageSegMode();

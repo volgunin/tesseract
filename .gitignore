@@ -36,10 +36,10 @@ tesseract.pc
 /doc/*.xml
 
 # generated version file
-/src/api/tess_version.h
+/include/tesseract/version.h
 
 # executables
-/src/api/tesseract
+/tesseract
 /src/training/ambiguous_words
 /src/training/classifier_tester
 /src/training/cntraining
@@ -64,6 +64,8 @@ tesseract.pc
 build/*
 /bin
 */.deps/*
+.dirstamp
+/.libs
 */.libs/*
 */*/.deps/*
 */*/.libs/*
@@ -85,8 +87,6 @@ kernel*.bin
 
 # build dirs
 /build*
-/.cppan
-/cppan
 /*.dll
 /*.lib
 /*.exe

@@ -43,7 +43,7 @@
 #include "degradeimage.h"
 #include "errcode.h"
 #include "fileio.h"
-#include "helpers.h"
+#include <tesseract/helpers.h>
 #include "normstrngs.h"
 #include "stringrenderer.h"
 #include "tlog.h"
@@ -598,7 +598,7 @@ static int Main() {
         rand_utf8.append(kSeparator);
       }
     }
-    tlog(1, "Rendered ngram string of size %d\n", rand_utf8.length());
+    tlog(1, "Rendered ngram string of size %zu\n", rand_utf8.length());
     src_utf8.swap(rand_utf8);
   }
   if (FLAGS_only_extract_font_properties) {
@@ -736,6 +736,7 @@ int main(int argc, char** argv) {
     if ((strcmp(argv[1], "-v") == 0) ||
       (strcmp(argv[1], "--version") == 0)) {
     FontUtils::PangoFontTypeInfo();
+    printf("Pango version: %s\n", pango_version_string());
     }
   }
   tesseract::ParseCommandLineFlags(argv[0], &argc, &argv, true);

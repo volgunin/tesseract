@@ -31,7 +31,7 @@
 #include "callcpp.h"
 #include "scrollview.h"
 #include "float2int.h"
-#include "helpers.h"
+#include <tesseract/helpers.h>
 #include "classify.h"
 #include "shapetable.h"
 
@@ -44,8 +44,8 @@ using tesseract::UnicharRating;
 // Parameters of the sigmoid used to convert similarity to evidence in the
 // similarity_evidence_table_ that is used to convert distance metric to an
 // 8 bit evidence value in the secondary matcher. (See IntMatcher::Init).
-const float IntegerMatcher::kSEExponentialMultiplier = 0.0;
-const float IntegerMatcher::kSimilarityCenter = 0.0075;
+const float IntegerMatcher::kSEExponentialMultiplier = 0.0f;
+const float IntegerMatcher::kSimilarityCenter = 0.0075f;
 
 static const uint8_t offset_table[] = {
   255, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3,
@@ -362,7 +362,7 @@ class ClassPruner {
             if (norm_count_[class_id] >= pruning_threshold_) {
               tprintf(" %s=%d,",
                       classify.ClassIDToDebugStr(int_templates,
-                                                 class_id, 0).string(),
+                                                 class_id, 0).c_str(),
                       pruner_word & CLASS_PRUNER_CLASS_MASK);
             }
             pruner_word >>= NUM_BITS_PER_CLASS;
@@ -385,7 +385,7 @@ class ClassPruner {
       STRING class_string = classify.ClassIDToDebugStr(int_templates,
                                                        class_id, 0);
       tprintf("%s:Initial=%d, E=%d, Xht-adj=%d, N=%d, Rat=%.2f\n",
-              class_string.string(),
+              class_string.c_str(),
               class_count_[class_id],
               expected_num_features[class_id],
               (norm_multiplier * normalization_factors[class_id]) >> 8,
@@ -402,7 +402,7 @@ class ClassPruner {
     results->init_to_size(num_classes_, empty);
     for (int c = 0; c < num_classes_; ++c) {
       (*results)[c].Class = sort_index_[num_classes_ - c];
-      (*results)[c].Rating = 1.0 - sort_key_[num_classes_ - c] /
+      (*results)[c].Rating = 1.0f - sort_key_[num_classes_ - c] /
         (static_cast<float>(CLASS_PRUNER_CLASS_MASK) * num_features_);
     }
     return num_classes_;
@@ -571,7 +571,7 @@ void IntegerMatcher::Match(INT_CLASS ClassTemplate,
 
 /**
  * FindGoodProtos finds all protos whose normalized proto-evidence
- * exceed classify_adapt_proto_thresh.  The list is ordered by increasing
+ * exceed AdaptProtoThreshold.  The list is ordered by increasing
  * proto id number.
  *
  * Globals:

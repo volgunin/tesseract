@@ -19,13 +19,13 @@
 #ifndef ERRCODE_H
 #define ERRCODE_H
 
-#include "platform.h"   // for TESS_API
+#include <tesseract/platform.h>   // for TESS_API
 
 /*Control parameters for error()*/
 enum TessErrorLogCode {
   DBG =     -1,           /*log without alert */
   TESSLOG =  0,            /*alert user */
-  TESSEXIT = 1,            /*exit after erro */
+  TESSEXIT = 1,            /*exit after error */
   ABORT =    2            /*abort after error */
 };
 

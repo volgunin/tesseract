@@ -11,10 +11,10 @@
 
 #include <string>
 #include "allheaders.h"
-#include "baseapi.h"
+#include <tesseract/baseapi.h>
 #include "boxread.h"
 #include "rect.h"
-#include "resultiterator.h"
+#include <tesseract/resultiterator.h>
 
 #include "include_gunit.h"
 
@@ -92,7 +92,7 @@ class ApplyBoxTest : public testing::Test {
       EXPECT_TRUE(ocr_box.major_overlap(truth_box));
       // Also check that the symbol text matches the box text.
       char* symbol_text = it->GetUTF8Text(tesseract::RIL_SYMBOL);
-      EXPECT_STREQ(box_text.string(), symbol_text);
+      EXPECT_STREQ(box_text.c_str(), symbol_text);
       delete[] symbol_text;
     } while (it->Next(tesseract::RIL_SYMBOL));
     delete it;

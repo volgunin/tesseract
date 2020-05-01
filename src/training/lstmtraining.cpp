@@ -20,10 +20,11 @@
 #endif
 #include <cerrno>
 #include "commontraining.h"
+#include "fileio.h"             // for LoadFileLinesToStrings
 #include "lstmtester.h"
 #include "lstmtrainer.h"
 #include "params.h"
-#include "strngs.h"
+#include <tesseract/strngs.h>
 #include "tprintf.h"
 #include "unicharset_training_utils.h"
 
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   if (FLAGS_traineddata.empty()) {
-    tprintf("Must provide a --traineddata see training wiki\n");
+    tprintf("Must provide a --traineddata see training documentation\n");
     return EXIT_FAILURE;
   }
 
@@ -142,10 +143,10 @@ int main(int argc, char **argv) {
   }
 
   // Checkpoints always take priority if they are available.
-  if (trainer.TryLoadingCheckpoint(checkpoint_file.string(), nullptr) ||
-      trainer.TryLoadingCheckpoint(checkpoint_bak.string(), nullptr)) {
+  if (trainer.TryLoadingCheckpoint(checkpoint_file.c_str(), nullptr) ||
+      trainer.TryLoadingCheckpoint(checkpoint_bak.c_str(), nullptr)) {
     tprintf("Successfully restored trainer from %s\n",
-            checkpoint_file.string());
+            checkpoint_file.c_str());
   } else {
     if (!FLAGS_continue_from.empty()) {
       // Load a past model file to improve upon.
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
     }
     STRING log_str;
     trainer.MaintainCheckpoints(tester_callback, &log_str);
-    tprintf("%s\n", log_str.string());
+    tprintf("%s\n", log_str.c_str());
   } while (trainer.best_error_rate() > FLAGS_target_error_rate &&
            (trainer.training_iteration() < FLAGS_max_iterations ||
             FLAGS_max_iterations == 0));

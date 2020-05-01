@@ -22,7 +22,9 @@
 #include <cstdlib>         // for abs
 #include "blobs.h"         // for TPOINT, TWERD, TBLOB
 #include "errcode.h"       // for ASSERT_HOST
+#if !defined(DISABLED_LEGACY_ENGINE)
 #include "lm_pain_points.h" // for LMPainPoints
+#endif
 #include "matrix.h"        // for MATRIX
 #include "normalis.h"      // for DENORM
 #include "pageres.h"       // for WERD_RES
@@ -128,7 +130,7 @@ void BlamerBundle::FillDebugString(const STRING &msg,
                                    const WERD_CHOICE *choice,
                                    STRING *debug) {
   (*debug) += "Truth ";
-  for (int i = 0; i < this->truth_text_.length(); ++i) {
+  for (int i = 0; i < this->truth_text_.size(); ++i) {
     (*debug) += this->truth_text_[i];
   }
   if (!this->truth_has_char_boxes_) (*debug) += " (no char boxes)";
@@ -275,7 +277,7 @@ void BlamerBundle::BlameClassifier(const UNICHARSET& unicharset,
       bool found = false;
       bool incorrect_adapted = false;
       UNICHAR_ID incorrect_adapted_id = INVALID_UNICHAR_ID;
-      const char *truth_str = truth_text_[b].string();
+      const char *truth_str = truth_text_[b].c_str();
       // We promise not to modify the list or its contents, using a
       // const BLOB_CHOICE* below.
       BLOB_CHOICE_IT choices_it(const_cast<BLOB_CHOICE_LIST*>(&choices));
@@ -409,7 +411,9 @@ void BlamerBundle::BlameClassifierOrLangModel(
 
 // Sets up the correct_segmentation_* to mark the correct bounding boxes.
 void BlamerBundle::SetupCorrectSegmentation(const TWERD* word, bool debug) {
-  params_training_bundle_.StartHypothesisList();
+#ifndef DISABLED_LEGACY_ENGINE
+ params_training_bundle_.StartHypothesisList();
+#endif //  ndef DISABLED_LEGACY_ENGINE
   if (incorrect_result_reason_ != IRR_CORRECT || !truth_has_char_boxes_)
     return;  // Nothing to do here.
 
@@ -447,12 +451,12 @@ void BlamerBundle::SetupCorrectSegmentation(const TWERD* word, bool debug) {
     }
   }
   if (blob_index < num_blobs ||  // trailing blobs
-      correct_segmentation_cols_.length() != norm_truth_word_.length()) {
+      correct_segmentation_cols_.size() != norm_truth_word_.length()) {
     debug_str.add_str_int("Blamer failed to find correct segmentation"
                           " (tolerance=", norm_box_tolerance_);
     if (blob_index >= num_blobs) debug_str += " blob == nullptr";
     debug_str += ")\n";
-    debug_str.add_str_int(" path length ", correct_segmentation_cols_.length());
+    debug_str.add_str_int(" path length ", correct_segmentation_cols_.size());
     debug_str.add_str_int(" vs. truth ", norm_truth_word_.length());
     debug_str += "\n";
     SetBlame(IRR_UNKNOWN, debug_str, nullptr, debug);
@@ -484,7 +488,7 @@ void BlamerBundle::InitForSegSearch(const WERD_CHOICE* best_choice,
   // Fill pain points for any unclassifed blob corresponding to the
   // correct segmentation state.
   *debug_str += "Correct segmentation:\n";
-  for (int idx = 0; idx < correct_segmentation_cols_.length(); ++idx) {
+  for (int idx = 0; idx < correct_segmentation_cols_.size(); ++idx) {
     debug_str->add_str_int("col=", correct_segmentation_cols_[idx]);
     debug_str->add_str_int(" row=", correct_segmentation_rows_[idx]);
     *debug_str += "\n";
@@ -568,7 +572,7 @@ void BlamerBundle::LastChanceBlame(bool debug, WERD_RES* word) {
                                     debug);
     } else if (irr != IRR_CORRECT && correct) {
       if (debug) {
-        tprintf("Corrected %s\n", word->blamer_bundle->debug_.string());
+        tprintf("Corrected %s\n", word->blamer_bundle->debug_.c_str());
       }
       word->blamer_bundle->incorrect_result_reason_ = IRR_CORRECT;
       word->blamer_bundle->debug_ = "";
@@ -587,7 +591,7 @@ void BlamerBundle::SetMisAdaptionDebug(const WERD_CHOICE *best_choice,
     misadaption_debug_ += "): ";
     FillDebugString("", best_choice, &misadaption_debug_);
     if (debug) {
-      tprintf("%s\n", misadaption_debug_.string());
+      tprintf("%s\n", misadaption_debug_.c_str());
     }
   }
 }

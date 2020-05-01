@@ -16,22 +16,23 @@
 ///////////////////////////////////////////////////////////////////////
 
 #include <thread>               // for std::thread
+#include "fileio.h"             // for LoadFileLinesToStrings
 #include "lstmtester.h"
-#include "genericvector.h"
+#include <tesseract/genericvector.h>
 
 namespace tesseract {
 
 LSTMTester::LSTMTester(int64_t max_memory)
-    : test_data_(max_memory), total_pages_(0), async_running_(false) {}
+    : test_data_(max_memory) {}
 
 // Loads a set of lstmf files that were created using the lstm.train config to
 // tesseract into memory ready for testing. Returns false if nothing was
 // loaded. The arg is a filename of a file that lists the filenames.
 bool LSTMTester::LoadAllEvalData(const STRING& filenames_file) {
   GenericVector<STRING> filenames;
-  if (!LoadFileLinesToStrings(filenames_file, &filenames)) {
+  if (!LoadFileLinesToStrings(filenames_file.c_str(), &filenames)) {
     tprintf("Failed to load list of eval filenames from %s\n",
-            filenames_file.string());
+            filenames_file.c_str());
     return false;
   }
   return LoadAllEvalData(filenames);
@@ -54,11 +55,11 @@ STRING LSTMTester::RunEvalAsync(int iteration, const double* training_errors,
                                 int training_stage) {
   STRING result;
   if (total_pages_ == 0) {
-    result.add_str_int("No test data at iteration", iteration);
+    result.add_str_int("No test data at iteration ", iteration);
     return result;
   }
   if (!LockIfNotRunning()) {
-    result.add_str_int("Previous test incomplete, skipping test at iteration",
+    result.add_str_int("Previous test incomplete, skipping test at iteration ",
                        iteration);
     return result;
   }
@@ -105,12 +106,12 @@ STRING LSTMTester::RunEvalSync(int iteration, const double* training_errors,
       word_error += trainer.NewSingleError(tesseract::ET_WORD_RECERR);
       ++error_count;
       if (verbosity > 1 || (verbosity > 0 && result != PERFECT)) {
-        tprintf("Truth:%s\n", trainingdata->transcription().string());
+        tprintf("Truth:%s\n", trainingdata->transcription().c_str());
         GenericVector<int> ocr_labels;
         GenericVector<int> xcoords;
         trainer.LabelsFromOutputs(fwd_outputs, &ocr_labels, &xcoords);
         STRING ocr_text = trainer.DecodeLabels(ocr_labels);
-        tprintf("OCR  :%s\n", ocr_text.string());
+        tprintf("OCR  :%s\n", ocr_text.c_str());
       }
     }
   }

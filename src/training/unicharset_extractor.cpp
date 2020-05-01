@@ -24,10 +24,10 @@
 #include "boxread.h"
 #include "commandlineflags.h"
 #include "commontraining.h"     // CheckSharedLibraryVersion
-#include "genericvector.h"
+#include <tesseract/genericvector.h>
 #include "lang_model_helpers.h"
 #include "normstrngs.h"
-#include "strngs.h"
+#include <tesseract/strngs.h>
 #include "unicharset.h"
 #include "unicharset_training_utils.h"
 
@@ -47,7 +47,7 @@ static void AddStringsToUnicharset(const GenericVector<STRING>& strings,
     if (NormalizeCleanAndSegmentUTF8(UnicodeNormMode::kNFC, OCRNorm::kNone,
                                      static_cast<GraphemeNormMode>(norm_mode),
                                      /*report_errors*/ true,
-                                     strings[i].string(), &normalized)) {
+                                     strings[i].c_str(), &normalized)) {
       for (const std::string& normed : normalized) {
 
        // normed is a UTF-8 encoded string

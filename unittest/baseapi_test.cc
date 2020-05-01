@@ -20,7 +20,7 @@
 #include "include_gunit.h"
 #include "gmock/gmock-matchers.h"
 
-#include "baseapi.h"
+#include <tesseract/baseapi.h>
 #include "cycletimer.h" // for CycleTimer
 #include "log.h"        // for LOG
 #include "ocrblock.h"   // for class BLOCK
@@ -62,14 +62,6 @@ class TesseractTest : public testing::Test {
     return TESSDATA_DIR;
   }
 };
-
-// Tests that array sizes match their intended size.
-TEST_F(TesseractTest, ArraySizeTest) {
-  int size = 0;
-  for (size = 0; kPolyBlockNames[size][0] != '\0'; ++size)
-    ;
-  EXPECT_EQ(size, PT_COUNT);
-}
 
 // Tests that Tesseract gets exactly the right answer on phototest.
 TEST_F(TesseractTest, BasicTesseractTest) {

@@ -13,8 +13,8 @@
 #include "matrix.h"
 #include "pageres.h"
 #include "ratngs.h"
-#include "genericvector.h"
-#include "helpers.h"
+#include <tesseract/genericvector.h>
+#include <tesseract/helpers.h>
 #include "unicharcompress.h"
 #include "normstrngs.h"
 #include "unicharset_training_utils.h"
@@ -82,13 +82,10 @@ class RecodeBeamTest : public ::testing::Test {
                                                 "radical-stroke.txt");
     std::string unicharset_file =
         file::JoinPath(TESTDATA_DIR, unicharset_name);
-    std::string uni_data;
-    CHECK_OK(file::GetContents(unicharset_file, &uni_data, file::Defaults()));
     std::string radical_data;
     CHECK_OK(file::GetContents(radical_stroke_file, &radical_data,
                                file::Defaults()));
-    CHECK(ccutil_.unicharset.load_from_inmemory_file(uni_data.data(),
-                                                     uni_data.size()));
+    CHECK(ccutil_.unicharset.load_from_file(unicharset_file.c_str()));
     unichar_null_char_ = ccutil_.unicharset.has_special_codes()
                              ? UNICHAR_BROKEN
                              : ccutil_.unicharset.size();
@@ -200,10 +197,10 @@ class RecodeBeamTest : public ::testing::Test {
         const WERD_RES* word = (*words)[w];
         if (w_decoded.size() < truth_utf8.size()) {
           if (!w_decoded.empty() && word->word->space()) w_decoded += " ";
-          w_decoded += word->best_choice->unichar_string().string();
+          w_decoded += word->best_choice->unichar_string().c_str();
         }
         LOG(INFO) << absl::StrFormat("Word:%d = %s, c=%g, r=%g, perm=%d", w,
-                                  word->best_choice->unichar_string().string(),
+                                  word->best_choice->unichar_string().c_str(),
                                   word->best_choice->certainty(),
                                   word->best_choice->rating(),
                                   word->best_choice->permuter()) << "\n";
@@ -467,7 +464,7 @@ TEST_F(RecodeBeamTest, DISABLED_ChiDictionary) {
                                      SYSTEM_DAWG_PERM};
   EXPECT_EQ(kNumWords, words.size());
   for (int w = 0; w < kNumWords && w < words.size(); ++w) {
-    EXPECT_STREQ(kWords[w], words[w]->best_choice->unichar_string().string());
+    EXPECT_STREQ(kWords[w], words[w]->best_choice->unichar_string().c_str());
     EXPECT_EQ(kWordPerms[w], words[w]->best_choice->permuter());
   }
 }

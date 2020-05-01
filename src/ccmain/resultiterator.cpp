@@ -4,7 +4,6 @@
 //              iterating in proper reading order over Bi Directional
 //              (e.g. mixed Hebrew and English) text.
 // Author:      David Eger
-// Created:     Fri May 27 13:58:06 PST 2011
 //
 // (C) Copyright 2011, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,13 +18,13 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include "resultiterator.h"
+#include <tesseract/resultiterator.h>
 
 #include <set>
 #include <vector>
 #include "allheaders.h"
 #include "pageres.h"
-#include "strngs.h"
+#include <tesseract/strngs.h>
 #include "tesseractclass.h"
 #include "unicharset.h"
 #include "unicodes.h"
@@ -636,13 +635,13 @@ char* ResultIterator::GetUTF8Text(PageIteratorLevel level) const {
   }
   int length = text.length() + 1;
   char* result = new char[length];
-  strncpy(result, text.string(), length);
+  strncpy(result, text.c_str(), length);
   return result;
 }
-std::vector<std::vector<std::pair<const char*, float>>>*
+std::vector<std::vector<std::vector<std::pair<const char*, float>>>>*
 ResultIterator::GetRawLSTMTimesteps() const {
   if (it_->word() != nullptr) {
-    return &it_->word()->raw_timesteps;
+    return &it_->word()->segmented_timesteps;
   } else {
     return nullptr;
   }
@@ -651,25 +650,7 @@ ResultIterator::GetRawLSTMTimesteps() const {
 std::vector<std::vector<std::pair<const char*, float>>>*
 ResultIterator::GetBestLSTMSymbolChoices() const {
   if (it_->word() != nullptr) {
-    return &it_->word()->accumulated_timesteps;
-  } else {
-    return nullptr;
-  }
-}
-
-std::vector<std::vector<std::pair<const char*, float>>>*
-ResultIterator::GetBestCTCSymbolChoices() const {
-  if (it_->word() != nullptr) {
     return &it_->word()->CTC_symbol_choices;
-  } else {
-    return nullptr;
-  }
-}
-
-std::vector<std::vector<std::vector<std::pair<const char*, float>>>>*
-ResultIterator::GetSegmentedLSTMTimesteps() const {
-  if (it_->word() != nullptr) {
-    return &it_->word()->symbol_steps;
   } else {
     return nullptr;
   }
@@ -724,7 +705,7 @@ void ResultIterator::IterateAndAppendUTF8TextlineText(STRING* text) {
     AppendUTF8WordText(text);
     words_appended++;
     if (BidiDebug(2)) {
-      tprintf("Num spaces=%d, text=%s\n", numSpaces, text->string());
+      tprintf("Num spaces=%d, text=%s\n", numSpaces, text->c_str());
     }
   } while (Next(RIL_WORD) && !IsAtBeginningOf(RIL_TEXTLINE));
   if (BidiDebug(1)) {

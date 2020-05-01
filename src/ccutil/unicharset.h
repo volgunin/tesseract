@@ -21,11 +21,11 @@
 
 #include <functional>           // for std::function
 #include "errcode.h"
-#include "genericvector.h"
-#include "helpers.h"
-#include "serialis.h"
-#include "strngs.h"
-#include "unichar.h"
+#include <tesseract/genericvector.h>
+#include <tesseract/helpers.h>
+#include <tesseract/serialis.h>
+#include <tesseract/strngs.h>
+#include <tesseract/unichar.h>
 #include "unicharmap.h"
 
 // Enum holding special values of unichar_id. Every unicharset has these.
@@ -371,16 +371,6 @@ class UNICHARSET {
   // Saves the content of the UNICHARSET to the given STRING.
   // Returns true if the operation is successful.
   bool save_to_string(STRING *str) const;
-
-  // Load a unicharset from a unicharset file that has been loaded into
-  // the given memory buffer.
-  // Returns true if the operation is successful.
-  bool load_from_inmemory_file(const char* const memory, int mem_size,
-                               bool skip_fragments);
-  // Returns true if the operation is successful.
-  bool load_from_inmemory_file(const char* const memory, int mem_size) {
-    return load_from_inmemory_file(memory, mem_size, false);
-  }
 
   // Opens the file indicated by filename and loads the UNICHARSET
   // from the given file. The previous data is lost.
@@ -827,7 +817,7 @@ class UNICHARSET {
   // Returns normalized version of unichar with the given unichar_id.
   const char *get_normed_unichar(UNICHAR_ID unichar_id) const {
     if (unichar_id == UNICHAR_SPACE) return " ";
-    return unichars[unichar_id].properties.normed.string();
+    return unichars[unichar_id].properties.normed.c_str();
   }
   // Returns a vector of UNICHAR_IDs that represent the ids of the normalized
   // version of the given id. There may be more than one UNICHAR_ID in the
@@ -939,7 +929,7 @@ class UNICHARSET {
     uint8_t max_bottom;
     uint8_t min_top;
     uint8_t max_top;
-    // Statstics of the widths of bounding box, relative to the median advance.
+    // Statistics of the widths of bounding box, relative to the median advance.
     float width;
     float width_sd;
     // Stats of the x-bearing and advance, also relative to the median advance.
@@ -1002,7 +992,7 @@ class UNICHARSET {
 
   // Load ourselves from a "file" where our only interface to the file is
   // an implementation of fgets().  This is the parsing primitive accessed by
-  // the public routines load_from_file() and load_from_inmemory_file().
+  // the public routines load_from_file().
   bool load_via_fgets(std::function<char*(char*, int)> fgets_cb,
                       bool skip_fragments);
 

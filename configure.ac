@@ -125,16 +125,28 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=un
 ## Checks for supported compiler options.
 
 AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
-AM_CONDITIONAL([AVX_OPT], ${avx})
+AM_CONDITIONAL([HAVE_AVX], ${avx})
+if $avx; then
+  AC_DEFINE([HAVE_AVX], [1], [Enable AVX instructions])
+fi
 
 AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
-AM_CONDITIONAL([AVX2_OPT], $avx2)
+AM_CONDITIONAL([HAVE_AVX2], $avx2)
+if $avx2; then
+  AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
+fi
 
 AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
-AM_CONDITIONAL([FMA_OPT], $fma)
+AM_CONDITIONAL([HAVE_FMA], $fma)
+if $fma; then
+  AC_DEFINE([HAVE_FMA], [1], [Enable FMA instructions])
+fi
 
 AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
-AM_CONDITIONAL([SSE41_OPT], $sse41)
+AM_CONDITIONAL([HAVE_SSE4_1], $sse41)
+if $sse41; then
+  AC_DEFINE([HAVE_SSE4_1], [1], [Enable SSE 4.1 instructions])
+fi
 
 AX_CHECK_COMPILE_FLAG([-march=native], [arch_native=true], [arch_native=false], [$WERROR])
 AM_CONDITIONAL([MARCH_NATIVE_OPT], $arch_native)
@@ -171,6 +183,9 @@ AC_ARG_ENABLE([legacy],
   AS_HELP_STRING([--disable-legacy], [disable the legacy OCR engine]))
 AC_MSG_RESULT([$enable_legacy])
 AM_CONDITIONAL([DISABLED_LEGACY_ENGINE], test "$enable_legacy" = "no")
+if test "$enable_legacy" = "no"; then
+  AC_DEFINE([DISABLED_LEGACY_ENGINE], [1], [Disable legacy OCR engine])
+fi
 
 # check whether to build OpenMP support
 AC_OPENMP
@@ -323,8 +338,6 @@ else
     AM_CPPFLAGS="$AM_CPPFLAGS -O2 -DNDEBUG"
 fi
 
-#localedir='${prefix}/share/locale'
-
 # Always look into a "gnu" directory.
 curwd=`pwd`
 if test -d $curwd/gnu/include ; then
@@ -428,6 +441,12 @@ AC_CHECK_TYPES([mbstate_t],,, [#include "wchar.h"])
 # Test auxiliary packages
 # ----------------------------------------
 
+PKG_CHECK_MODULES([libcurl], [libcurl], [have_libcurl=true], [have_libcurl=false])
+AM_CONDITIONAL([HAVE_LIBCURL], $have_libcurl)
+if $have_libcurl; then
+  AC_DEFINE([HAVE_LIBCURL], [1], [Enable libcurl])
+fi
+
 PKG_CHECK_MODULES([LEPTONICA], [lept >= 1.74], [have_lept=true], [have_lept=false])
 if $have_lept; then
   CPPFLAGS="$CPPFLAGS $LEPTONICA_CFLAGS"
@@ -438,7 +457,7 @@ fi
 PKG_CHECK_MODULES([libarchive], [libarchive], [have_libarchive=true], [have_libarchive=false])
 AM_CONDITIONAL([HAVE_LIBARCHIVE], [$have_libarchive])
 if $have_libarchive; then
-  AC_DEFINE([HAVE_LIBARCHIVE], [], [Enable libarchive])
+  AC_DEFINE([HAVE_LIBARCHIVE], [1], [Enable libarchive])
   CPPFLAGS="$CPPFLAGS $libarchive_CFLAGS"
 fi
 
@@ -452,8 +471,6 @@ if !($have_icu_uc && $have_icu_i18n); then
   AC_MSG_WARN([Training tools WILL NOT be built.])
   AC_MSG_WARN([Try to install libicu-devel package.])
   AM_CONDITIONAL([ENABLE_TRAINING], false)
-else
-  CPPFLAGS="$CPPFLAGS $ICU_UC_CFLAGS $ICU_I18N_CFLAGS"
 fi
 
 # Check location of pango headers
@@ -463,8 +480,6 @@ if !($have_pango); then
         AC_MSG_WARN([Training tools WILL NOT be built.])
         AC_MSG_WARN([Try to install libpango1.0-dev package.])
         AM_CONDITIONAL([ENABLE_TRAINING], false)
-else
-      CPPFLAGS="$CPPFLAGS $pango_CFLAGS"
 fi
 
 # Check location of cairo headers
@@ -473,31 +488,18 @@ if !($have_cairo); then
         AC_MSG_WARN([Training tools WILL NOT be built because of missing cairo library.])
         AC_MSG_WARN([Try to install libcairo-dev?? package.])
         AM_CONDITIONAL([ENABLE_TRAINING], false)
-else
-      CPPFLAGS="$CPPFLAGS $cairo_CFLAGS"
 fi
 
+PKG_CHECK_MODULES([pangocairo], [pangocairo], [], [false])
+PKG_CHECK_MODULES([pangoft2], [pangoft2], [], [false])
 
 # ----------------------------------------
 # Final Tasks and Output
 # ----------------------------------------
 
 # Output files
+AC_CONFIG_FILES([include/tesseract/version.h])
 AC_CONFIG_FILES([Makefile tesseract.pc])
-AC_CONFIG_FILES([src/api/Makefile])
-AC_CONFIG_FILES([src/api/tess_version.h])
-AC_CONFIG_FILES([src/arch/Makefile])
-AC_CONFIG_FILES([src/ccmain/Makefile])
-AC_CONFIG_FILES([src/opencl/Makefile])
-AC_CONFIG_FILES([src/ccstruct/Makefile])
-AC_CONFIG_FILES([src/ccutil/Makefile])
-AC_CONFIG_FILES([src/classify/Makefile])
-AC_CONFIG_FILES([src/cutil/Makefile])
-AC_CONFIG_FILES([src/dict/Makefile])
-AC_CONFIG_FILES([src/lstm/Makefile])
-AC_CONFIG_FILES([src/textord/Makefile])
-AC_CONFIG_FILES([src/viewer/Makefile])
-AC_CONFIG_FILES([src/wordrec/Makefile])
 AC_CONFIG_FILES([tessdata/Makefile])
 AC_CONFIG_FILES([tessdata/configs/Makefile])
 AC_CONFIG_FILES([tessdata/tessconfigs/Makefile])
