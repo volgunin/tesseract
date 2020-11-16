@@ -15,6 +15,10 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #include "fullyconnected.h"
 
 #ifdef _OPENMP
@@ -128,8 +132,11 @@ void FullyConnected::Forward(bool debug, const NetworkIO& input,
   temp_lines.init_to_size(kNumThreads, NetworkScratch::FloatVec());
   GenericVector<NetworkScratch::FloatVec> curr_input;
   curr_input.init_to_size(kNumThreads, NetworkScratch::FloatVec());
+  int ro = no_;
+  if (IntSimdMatrix::intSimdMatrix)
+    ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
   for (int i = 0; i < kNumThreads; ++i) {
-    temp_lines[i].Init(no_, scratch);
+    temp_lines[i].Init(no_, ro, scratch);
     curr_input[i].Init(ni_, scratch);
   }
 #ifdef _OPENMP
@@ -165,7 +172,9 @@ void FullyConnected::Forward(bool debug, const NetworkIO& input,
   tprintf("F Output:%s\n", name_.c_str());
   output->Print(10);
 #endif
+#ifndef GRAPHICS_DISABLED
   if (debug) DisplayForward(*output);
+#endif
 }
 
 // Components of Forward so FullyConnected can be reused inside LSTM.
@@ -220,7 +229,9 @@ void FullyConnected::ForwardTimeStep(const int8_t* i_input,
 bool FullyConnected::Backward(bool debug, const NetworkIO& fwd_deltas,
                               NetworkScratch* scratch,
                               NetworkIO* back_deltas) {
+#ifndef GRAPHICS_DISABLED
   if (debug) DisplayBackward(fwd_deltas);
+#endif
   back_deltas->Resize(fwd_deltas, ni_);
   GenericVector<NetworkScratch::FloatVec> errors;
   errors.init_to_size(kNumThreads, NetworkScratch::FloatVec());

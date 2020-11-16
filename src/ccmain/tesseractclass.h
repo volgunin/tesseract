@@ -27,6 +27,11 @@
 
 #include <cstdint>                  // for int16_t, int32_t, uint16_t
 #include <cstdio>                   // for FILE
+
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
 #include "allheaders.h"             // for pixDestroy, pixGetWidth, pixGetHe...
 #include "control.h"                // for ACCEPTABLE_WERD_TYPE
 #include "debugpixa.h"              // for DebugPixa
@@ -335,7 +340,7 @@ class Tesseract : public Wordrec {
   // Breaks the page into lines, according to the boxes, and writes them to a
   // serialized DocumentData based on output_basename.
   // Return true if successful, false if an error occurred.
-  bool TrainLineRecognizer(const STRING& input_imagename,
+  bool TrainLineRecognizer(const char* input_imagename,
                            const STRING& output_basename,
                            BLOCK_LIST* block_list);
   // Generates training data for training a line recognizer, eg LSTM.
@@ -561,7 +566,7 @@ class Tesseract : public Wordrec {
   SVMenuNode* build_menu_new();
 #ifndef GRAPHICS_DISABLED
   void pgeditor_main(int width, int height, PAGE_RES* page_res);
-#endif                       // GRAPHICS_DISABLED
+#endif // !GRAPHICS_DISABLED
   void process_image_event(  // action in image win
       const SVEvent& event);
   bool process_cmd_win_event(  // UI command semantics
@@ -577,7 +582,7 @@ class Tesseract : public Wordrec {
   bool word_set_display(PAGE_RES_IT* pr_it);
   // #ifndef GRAPHICS_DISABLED
   bool word_dumper(PAGE_RES_IT* pr_it);
-  // #endif  // GRAPHICS_DISABLED
+  // #endif // !GRAPHICS_DISABLED
   void blob_feature_display(PAGE_RES* page_res, const TBOX& selection_box);
   //// reject.h //////////////////////////////////////////////////////////
   // make rej map for word
@@ -673,7 +678,7 @@ class Tesseract : public Wordrec {
   bool tess_acceptable_word(WERD_RES* word);
 
   //// applybox.cpp //////////////////////////////////////////////////////
-  // Applies the box file based on the image name fname, and resegments
+  // Applies the box file based on the image name filename, and resegments
   // the words in the block_list (page), with:
   // blob-mode: one blob per line in the box file, words as input.
   // word/line-mode: one blob per space-delimited unit after the #, and one word
@@ -693,7 +698,7 @@ class Tesseract : public Wordrec {
   // Instead, the correct_text member of WERD_RES is set, and this may be later
   // converted to a best_choice using CorrectClassifyWords. CorrectClassifyWords
   // is not required before calling ApplyBoxTraining.
-  PAGE_RES* ApplyBoxes(const STRING& fname, bool find_segmentation,
+  PAGE_RES* ApplyBoxes(const char* filename, bool find_segmentation,
                        BLOCK_LIST* block_list);
 
   // Any row xheight that is significantly different from the median is set
@@ -1088,7 +1093,7 @@ class Tesseract : public Wordrec {
             "Sets the number of cascading iterations for the Beamsearch in "
             "lstm_choice_mode. Note that lstm_choice_mode must be set to "
             "a value greater than 0 to produce results.");
-  double_VAR_H(lstm_rating_coefficient, 5, 
+  double_VAR_H(lstm_rating_coefficient, 5,
                "Sets the rating coefficient for the lstm choices. The smaller "
                "the coefficient, the better are the ratings for each choice "
                "and less information is lost due to the cut off at 0. The "
@@ -1097,8 +1102,8 @@ class Tesseract : public Wordrec {
              "Detect music staff and remove intersecting components");
 
   //// ambigsrecog.cpp /////////////////////////////////////////////////////////
-  FILE* init_recog_training(const STRING& fname);
-  void recog_training_segmented(const STRING& fname, PAGE_RES* page_res,
+  FILE* init_recog_training(const char* filename);
+  void recog_training_segmented(const char* filename, PAGE_RES* page_res,
                                 volatile ETEXT_DESC* monitor,
                                 FILE* output_file);
   void ambigs_classify_and_output(const char* label, PAGE_RES_IT* pr_it,

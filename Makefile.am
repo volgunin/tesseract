@@ -183,13 +183,19 @@ libtesseract_la_LIBADD += libtesseract_sse.la
 noinst_LTLIBRARIES += libtesseract_sse.la
 endif
 
+if HAVE_NEON
+libtesseract_neon_la_CXXFLAGS = $(NEON_CXXFLAGS)
+libtesseract_neon_la_SOURCES = src/arch/intsimdmatrixneon.cpp
+libtesseract_la_LIBADD += libtesseract_neon.la
+noinst_LTLIBRARIES += libtesseract_neon.la
+endif
+
 libtesseract_la_SOURCES += src/arch/intsimdmatrix.cpp
 libtesseract_la_SOURCES += src/arch/simddetect.cpp
 
 # Rules for src/ccmain.
 
 noinst_HEADERS += src/ccmain/control.h
-noinst_HEADERS += src/ccmain/equationdetect.h
 noinst_HEADERS += src/ccmain/mutableiterator.h
 noinst_HEADERS += src/ccmain/output.h
 noinst_HEADERS += src/ccmain/paragraphs.h
@@ -201,6 +207,7 @@ noinst_HEADERS += src/ccmain/tessvars.h
 noinst_HEADERS += src/ccmain/werdit.h
 if !DISABLED_LEGACY_ENGINE
 noinst_HEADERS += src/ccmain/docqual.h
+noinst_HEADERS += src/ccmain/equationdetect.h
 noinst_HEADERS += src/ccmain/fixspace.h
 noinst_HEADERS += src/ccmain/reject.h
 endif
@@ -339,7 +346,6 @@ noinst_HEADERS += src/ccutil/elst.h
 noinst_HEADERS += src/ccutil/errcode.h
 noinst_HEADERS += src/ccutil/fileerr.h
 noinst_HEADERS += src/ccutil/genericheap.h
-noinst_HEADERS += src/ccutil/globaloc.h
 noinst_HEADERS += src/ccutil/host.h
 noinst_HEADERS += src/ccutil/kdpair.h
 noinst_HEADERS += src/ccutil/lsterr.h
@@ -369,7 +375,6 @@ libtesseract_ccutil_la_SOURCES += src/ccutil/clst.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/elst2.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/elst.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/errcode.cpp
-libtesseract_ccutil_la_SOURCES += src/ccutil/globaloc.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/mainblk.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/serialis.cpp
 libtesseract_ccutil_la_SOURCES += src/ccutil/strngs.cpp
@@ -455,14 +460,12 @@ endif
 
 # Rules for src/cutil.
 
-noinst_HEADERS += src/cutil/callcpp.h
 if !DISABLED_LEGACY_ENGINE
 noinst_HEADERS += src/cutil/bitvec.h
 noinst_HEADERS += src/cutil/emalloc.h
 noinst_HEADERS += src/cutil/oldlist.h
 endif
 
-libtesseract_la_SOURCES += src/cutil/callcpp.cpp
 if !DISABLED_LEGACY_ENGINE
 libtesseract_la_SOURCES += src/cutil/emalloc.cpp
 libtesseract_la_SOURCES += src/cutil/oldlist.cpp
@@ -481,11 +484,11 @@ libtesseract_la_SOURCES += src/dict/context.cpp
 libtesseract_la_SOURCES += src/dict/dawg.cpp
 libtesseract_la_SOURCES += src/dict/dawg_cache.cpp
 libtesseract_la_SOURCES += src/dict/dict.cpp
-libtesseract_la_SOURCES += src/dict/permdawg.cpp
 libtesseract_la_SOURCES += src/dict/stopper.cpp
 libtesseract_la_SOURCES += src/dict/trie.cpp
 if !DISABLED_LEGACY_ENGINE
 libtesseract_la_SOURCES += src/dict/hyphen.cpp
+libtesseract_la_SOURCES += src/dict/permdawg.cpp
 endif
 
 # Rules for src/lstm.

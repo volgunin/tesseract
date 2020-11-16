@@ -2,7 +2,6 @@
 // File:        lstmrecognizer.cpp
 // Description: Top-level line recognizer class for LSTM-based networks.
 // Author:      Ray Smith
-// Created:     Thu May 02 10:59:06 PST 2013
 //
 // (C) Copyright 2013, Google Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +23,6 @@
 #include "lstmrecognizer.h"
 
 #include "allheaders.h"
-#include "callcpp.h"
 #include "dict.h"
 #include "genericheap.h"
 #include <tesseract/helpers.h>
@@ -292,7 +290,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
   // Check for auto inversion.
   float pos_min, pos_mean, pos_sd;
   OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
-  if (invert && pos_min < 0.5) {
+  if (invert && pos_mean < 0.5) {
     // Run again inverted and see if it is any better.
     NetworkIO inv_inputs, inv_outputs;
     inv_inputs.set_int_mode(IsIntMode());
@@ -304,7 +302,7 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
                       &inv_outputs);
     float inv_min, inv_mean, inv_sd;
     OutputStats(inv_outputs, &inv_min, &inv_mean, &inv_sd);
-    if (inv_min > pos_min && inv_mean > pos_mean && inv_sd < pos_sd) {
+    if (inv_mean > pos_mean) {
       // Inverted did better. Use inverted data.
       if (debug) {
         tprintf("Inverting image: old min=%g, mean=%g, sd=%g, inv %g,%g,%g\n",
@@ -323,7 +321,9 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
   if (debug) {
     GenericVector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
+#ifndef GRAPHICS_DISABLED
     DisplayForward(*inputs, labels, coords, "LSTMForward", &debug_win_);
+#endif
     DebugActivationPath(*outputs, labels, coords);
   }
   return true;
@@ -344,6 +344,8 @@ STRING LSTMRecognizer::DecodeLabels(const GenericVector<int>& labels) {
   return result;
 }
 
+#ifndef GRAPHICS_DISABLED
+
 // Displays the forward results in a window with the characters and
 // boundaries as determined by the labels and label_coords.
 void LSTMRecognizer::DisplayForward(const NetworkIO& inputs,
@@ -351,13 +353,11 @@ void LSTMRecognizer::DisplayForward(const NetworkIO& inputs,
                                     const GenericVector<int>& label_coords,
                                     const char* window_name,
                                     ScrollView** window) {
-#ifndef GRAPHICS_DISABLED  // do nothing if there's no graphics
   Pix* input_pix = inputs.ToPix();
   Network::ClearWindow(false, window_name, pixGetWidth(input_pix),
                        pixGetHeight(input_pix), window);
   int line_height = Network::DisplayImage(input_pix, *window);
   DisplayLSTMOutput(labels, label_coords, line_height, *window);
-#endif  // GRAPHICS_DISABLED
 }
 
 // Displays the labels and cuts at the corresponding xcoords.
@@ -365,7 +365,6 @@ void LSTMRecognizer::DisplayForward(const NetworkIO& inputs,
 void LSTMRecognizer::DisplayLSTMOutput(const GenericVector<int>& labels,
                                        const GenericVector<int>& xcoords,
                                        int height, ScrollView* window) {
-#ifndef GRAPHICS_DISABLED  // do nothing if there's no graphics
   int x_scale = network_->XScaleFactor();
   window->TextAttributes("Arial", height / 4, false, false, false);
   int end = 1;
@@ -384,8 +383,9 @@ void LSTMRecognizer::DisplayLSTMOutput(const GenericVector<int>& labels,
     window->Line(xpos, 0, xpos, height * 3 / 2);
   }
   window->Update();
-#endif  // GRAPHICS_DISABLED
 }
+
+#endif // !GRAPHICS_DISABLED
 
 // Prints debug output detailing the activation path that is implied by the
 // label_coords.

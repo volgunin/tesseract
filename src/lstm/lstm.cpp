@@ -15,6 +15,10 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #include "lstm.h"
 
 #ifdef _OPENMP
@@ -260,7 +264,10 @@ void LSTM::Forward(bool debug, const NetworkIO& input,
   ResizeForward(input);
   // Temporary storage of forward computation for each gate.
   NetworkScratch::FloatVec temp_lines[WT_COUNT];
-  for (auto & temp_line : temp_lines) temp_line.Init(ns_, scratch);
+  int ro = ns_;
+  if (source_.int_mode() && IntSimdMatrix::intSimdMatrix)
+    ro = IntSimdMatrix::intSimdMatrix->RoundOutputs(ro);
+  for (auto & temp_line : temp_lines) temp_line.Init(ns_, ro, scratch);
   // Single timestep buffers for the current/recurrent output and state.
   NetworkScratch::FloatVec curr_state, curr_output;
   curr_state.Init(ns_, scratch);
@@ -432,7 +439,9 @@ void LSTM::Forward(bool debug, const NetworkIO& input,
   tprintf("Output:%s\n", name_.c_str());
   output->Print(10);
 #endif
+#ifndef GRAPHICS_DISABLED
   if (debug) DisplayForward(*output);
+#endif
 }
 
 // Runs backward propagation of errors on the deltas line.
@@ -440,7 +449,9 @@ void LSTM::Forward(bool debug, const NetworkIO& input,
 bool LSTM::Backward(bool debug, const NetworkIO& fwd_deltas,
                     NetworkScratch* scratch,
                     NetworkIO* back_deltas) {
+#ifndef GRAPHICS_DISABLED
   if (debug) DisplayBackward(fwd_deltas);
+#endif
   back_deltas->ResizeToMap(fwd_deltas.int_mode(), input_map_, ni_);
   // ======Scratch space.======
   // Output errors from deltas with recurrence from sourceerr.

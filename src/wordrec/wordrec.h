@@ -19,6 +19,10 @@
 #ifndef TESSERACT_WORDREC_WORDREC_H_
 #define TESSERACT_WORDREC_WORDREC_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h" // DISABLED_LEGACY_ENGINE
+#endif
+
 #ifdef DISABLED_LEGACY_ENGINE
 
 #include <cstdint>             // for int16_t, int32_t
@@ -59,14 +63,9 @@ class Wordrec : public Classify {
 
 #else  // DISABLED_LEGACY_ENGINE not defined
 
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
-
 #include <cstdint>             // for int16_t, int32_t
 #include <memory>
 #include "associate.h"
-#include "callcpp.h"           // for C_COL
 #include "chop.h"              // for PointHeap, MAX_NUM_POINTS
 #include "classify.h"          // for Classify
 #include "dict.h"
@@ -276,7 +275,7 @@ class Wordrec : public Classify {
   // wordclass.cpp
   BLOB_CHOICE_LIST *classify_blob(TBLOB *blob,
                                   const char *string,
-                                  C_COL color,
+                                  ScrollView::Color color,
                                   BlamerBundle *blamer_bundle);
 
   // segsearch.cpp

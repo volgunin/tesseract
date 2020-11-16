@@ -33,7 +33,7 @@
 #include "coutln.h"             // for C_OUTLINE_IT, C_OUTLINE_LIST, C_OUTLINE
 #include "drawtord.h"           // for plot_box_list, to_win, create_to_win
 #include "edgblob.h"            // for extract_edges
-#include "errcode.h"            // for set_global_loc_code, ASSERT_HOST, LOC...
+#include "errcode.h"            // for ASSERT_HOST, ...
 #include <tesseract/genericvector.h>      // for PointerVector, GenericVector
 #include "makerow.h"            // for textord_test_x, textord_test_y, texto...
 #include "morph.h"              // for L_BOUNDARY_BG
@@ -225,8 +225,6 @@ void Textord::find_components(Pix* pix, BLOCK_LIST *blocks,
     return;  // Can't handle it.
   }
 
-  set_global_loc_code(LOC_EDGE_PROG);
-
   BLOCK_IT block_it(blocks);    // iterator
   for (block_it.mark_cycle_pt(); !block_it.cycled_list();
        block_it.forward()) {
@@ -256,7 +254,7 @@ void Textord::filter_blobs(ICOORD page_tr,         // top right
   #ifndef GRAPHICS_DISABLED
   if (to_win != nullptr)
     to_win->Clear();
-  #endif  // GRAPHICS_DISABLED
+  #endif // !GRAPHICS_DISABLED
 
   for (block_it.mark_cycle_pt(); !block_it.cycled_list();
        block_it.forward()) {
@@ -288,7 +286,7 @@ void Textord::filter_blobs(ICOORD page_tr,         // top right
       plot_box_list(to_win, &block->large_blobs, ScrollView::WHITE);
       plot_box_list(to_win, &block->blobs, ScrollView::WHITE);
     }
-    #endif  // GRAPHICS_DISABLED
+    #endif // !GRAPHICS_DISABLED
   }
 }
 

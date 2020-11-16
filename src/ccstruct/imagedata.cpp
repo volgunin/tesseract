@@ -24,11 +24,9 @@
 #include "imagedata.h"
 
 #include <cinttypes>     // for PRId64
-#include <thread>        // for std::thread
 
 #include "allheaders.h"  // for pixDestroy, pixGetHeight, pixGetWidth, lept_...
 #include "boxread.h"     // for ReadMemBoxes
-#include "callcpp.h"     // for window_wait
 #include <tesseract/helpers.h>     // for IntCastRounded, TRand, ClipToRange, Modulo
 #include "rect.h"        // for TBOX
 #include "scrollview.h"  // for ScrollView, ScrollView::CYAN, ScrollView::NONE
@@ -125,6 +123,9 @@ ImageData::ImageData(bool vertical, Pix* pix)
   SetPix(pix);
 }
 ImageData::~ImageData() {
+#ifdef TESSERACT_IMAGEDATA_AS_PIX
+  pixDestroy(&internal_pix_);
+#endif
 }
 
 // Builds and returns an ImageData from the basic data. Note that imagedata,
@@ -259,6 +260,8 @@ Pix* ImageData::PreScale(int target_height, int max_height, float* scale_factor,
   if (pix == nullptr) {
     tprintf("Scaling pix of size %d, %d by factor %g made null pix!!\n",
             input_width, input_height, im_factor);
+    pixDestroy(&src_pix);
+    return nullptr;
   }
   if (scaled_width != nullptr) *scaled_width = pixGetWidth(pix);
   if (scaled_height != nullptr) *scaled_height = pixGetHeight(pix);
@@ -285,9 +288,10 @@ int ImageData::MemoryUsed() const {
   return image_data_.size();
 }
 
+#ifndef GRAPHICS_DISABLED
+
 // Draws the data in a new window.
 void ImageData::Display() const {
-#ifndef GRAPHICS_DISABLED
   const int kTextSize = 64;
   // Draw the image.
   Pix* pix = GetPix();
@@ -318,9 +322,10 @@ void ImageData::Display() const {
     win->Text(0, height + kTextSize * 2, transcription_.c_str());
   }
   win->Update();
-  window_wait(win);
-#endif
+  win->Wait();
 }
+
+#endif
 
 // Adds the supplied boxes and transcriptions that correspond to the correct
 // page number.
@@ -396,6 +401,9 @@ DocumentData::DocumentData(const STRING& name)
       reader_(nullptr) {}
 
 DocumentData::~DocumentData() {
+  if (thread.joinable()) {
+    thread.join();
+  }
   std::lock_guard<std::mutex> lock_p(pages_mutex_);
   std::lock_guard<std::mutex> lock_g(general_mutex_);
 }
@@ -454,8 +462,10 @@ void DocumentData::LoadPageInBackground(int index) {
   if (pages_offset_ == index) return;
   pages_offset_ = index;
   pages_.clear();
-  std::thread t(&tesseract::DocumentData::ReCachePages, this);
-  t.detach();
+  if (thread.joinable()) {
+    thread.join();
+  }
+  thread = std::thread(&tesseract::DocumentData::ReCachePages, this);
 }
 
 // Returns a pointer to the page with the given index, modulo the total
@@ -534,7 +544,7 @@ bool DocumentData::ReCachePages() {
   int loaded_pages = 0;
   pages_.truncate(0);
   TFile fp;
-  if (!fp.Open(document_name_, reader_) ||
+  if (!fp.Open(document_name_.c_str(), reader_) ||
       !PointerVector<ImageData>::DeSerializeSize(&fp, &loaded_pages) ||
       loaded_pages <= 0) {
     tprintf("Deserialize header failed: %s\n", document_name_.c_str());

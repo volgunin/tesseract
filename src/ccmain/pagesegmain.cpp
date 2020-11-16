@@ -34,7 +34,9 @@
 #include "blread.h"
 #include "colfind.h"
 #include "debugpixa.h"
+#ifndef DISABLED_LEGACY_ENGINE
 #include "equationdetect.h"
+#endif
 #include "imagefind.h"
 #include "linefind.h"
 #include "makerow.h"
@@ -219,9 +221,11 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST* blocks,
       // blocks separately. For now combine with photomask_pix.
       pixOr(photomask_pix, photomask_pix, musicmask_pix);
     }
+  #ifndef DISABLED_LEGACY_ENGINE
     if (equ_detect_) {
       finder->SetEquationDetect(equ_detect_);
     }
+  #endif  // ndef DISABLED_LEGACY_ENGINE
     result = finder->FindBlocks(pageseg_mode, scaled_color_, scaled_factor_,
                                 to_block, photomask_pix, pix_thresholds_,
                                 pix_grey_, &pixa_debug_, &found_blocks,
@@ -292,7 +296,14 @@ ColumnFinder* Tesseract::SetupPageSegAndDetectOrientation(
   // Leptonica is used to find a mask of the photo regions in the input.
   *photo_mask_pix = ImageFind::FindImages(pix_binary_, &pixa_debug_);
   if (tessedit_dump_pageseg_images) {
-    pixa_debug_.AddPix(pix_binary_, "NoImages");
+    Pix* pix_no_image_ = nullptr;
+    if (*photo_mask_pix != nullptr) {
+      pix_no_image_ = pixSubtract(nullptr, pix_binary_, *photo_mask_pix);
+    } else {
+      pix_no_image_ = pixClone(pix_binary_);
+    }
+    pixa_debug_.AddPix(pix_no_image_, "NoImages");
+    pixDestroy(&pix_no_image_);
   }
   if (!PSM_COL_FIND_ENABLED(pageseg_mode)) v_lines.clear();
 

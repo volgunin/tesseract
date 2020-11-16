@@ -33,7 +33,6 @@
 #include "ambigs.h"             // for UnicharIdVector, UnicharAmbigs
 #include "bitvec.h"             // for FreeBitVector, NewBitVector, BIT_VECTOR
 #include "blobs.h"              // for TBLOB, TWERD
-#include "callcpp.h"            // for cprintf, window_wait
 #include "classify.h"           // for Classify, CST_FRAGMENT, CST_WHOLE
 #include "dict.h"               // for Dict
 #include "errcode.h"            // for ASSERT_HOST
@@ -221,11 +220,12 @@ void Classify::AdaptiveClassifier(TBLOB *Blob, BLOB_CHOICE_LIST *Choices) {
   delete Results;
 }                                /* AdaptiveClassifier */
 
+#ifndef GRAPHICS_DISABLED
+
 // If *win is nullptr, sets it to a new ScrollView() object with title msg.
 // Clears the window and draws baselines.
 void Classify::RefreshDebugWindow(ScrollView **win, const char *msg,
                                   int y_offset, const TBOX &wbox) {
-  #ifndef GRAPHICS_DISABLED
   const int kSampleSpaceWidth = 500;
   if (*win == nullptr) {
     *win = new ScrollView(msg, 100, y_offset, kSampleSpaceWidth * 2, 200,
@@ -239,8 +239,9 @@ void Classify::RefreshDebugWindow(ScrollView **win, const char *msg,
                kSampleSpaceWidth, kBlnXHeight + kBlnBaselineOffset);
   (*win)->ZoomToRectangle(wbox.left(), wbox.top(),
                           wbox.right(), wbox.bottom());
-  #endif  // GRAPHICS_DISABLED
 }
+
+#endif // !GRAPHICS_DISABLED
 
 // Learns the given word using its chopped_word, seam_array, denorm,
 // box_word, best_state, and correct_text to learn both correctly and
@@ -271,7 +272,7 @@ void Classify::LearnWord(const char* fontname, WERD_RES* word) {
   #ifndef GRAPHICS_DISABLED
   if (classify_debug_character_fragments) {
     if (learn_fragmented_word_debug_win_ != nullptr) {
-      window_wait(learn_fragmented_word_debug_win_);
+      learn_fragmented_word_debug_win_->Wait();
     }
     RefreshDebugWindow(&learn_fragments_debug_win_, "LearnPieces", 400,
                        word->chopped_word->bounding_box());
@@ -280,7 +281,7 @@ void Classify::LearnWord(const char* fontname, WERD_RES* word) {
     word->chopped_word->plot(learn_fragmented_word_debug_win_);
     ScrollView::Update();
   }
-  #endif  // GRAPHICS_DISABLED
+  #endif // !GRAPHICS_DISABLED
 
   for (int ch = 0; ch < word_len; ++ch) {
     if (classify_debug_character_fragments) {
@@ -397,7 +398,7 @@ void Classify::LearnPieces(const char* fontname, int start, int length,
                        word->chopped_word->bounding_box());
     rotated_blob->plot(learn_debug_win_, ScrollView::GREEN, ScrollView::BROWN);
     learn_debug_win_->Update();
-    window_wait(learn_debug_win_);
+    learn_debug_win_->Wait();
   }
   if (classify_debug_character_fragments && segmentation == CST_FRAGMENT) {
     ASSERT_HOST(learn_fragments_debug_win_ != nullptr);  // set up in LearnWord
@@ -405,7 +406,7 @@ void Classify::LearnPieces(const char* fontname, int start, int length,
                ScrollView::BLUE, ScrollView::BROWN);
     learn_fragments_debug_win_->Update();
   }
-  #endif  // GRAPHICS_DISABLED
+  #endif // !GRAPHICS_DISABLED
 
   if (fontname != nullptr) {
     classify_norm_method.set_value(character);  // force char norm spc 30/11/93
@@ -465,12 +466,12 @@ void Classify::EndAdaptiveClassifier() {
     Filename = imagefile + ADAPT_TEMPLATE_SUFFIX;
     File = fopen (Filename.c_str(), "wb");
     if (File == nullptr)
-      cprintf ("Unable to save adapted templates to %s!\n", Filename.c_str());
+      tprintf ("Unable to save adapted templates to %s!\n", Filename.c_str());
     else {
-      cprintf ("\nSaving adapted templates to %s ...", Filename.c_str());
+      tprintf ("\nSaving adapted templates to %s ...", Filename.c_str());
       fflush(stdout);
       WriteAdaptedTemplates(File, AdaptedTemplates);
-      cprintf ("\n");
+      tprintf ("\n");
       fclose(File);
     }
   }
@@ -577,11 +578,11 @@ void Classify::InitAdaptiveClassifier(TessdataManager* mgr) {
     if (!fp.Open(Filename.c_str(), nullptr)) {
       AdaptedTemplates = NewAdaptedTemplates(true);
     } else {
-      cprintf("\nReading pre-adapted templates from %s ...\n",
+      tprintf("\nReading pre-adapted templates from %s ...\n",
               Filename.c_str());
       fflush(stdout);
       AdaptedTemplates = ReadAdaptedTemplates(&fp);
-      cprintf("\n");
+      tprintf("\n");
       PrintAdaptedTemplates(stdout, AdaptedTemplates);
 
       for (int i = 0; i < AdaptedTemplates->Templates->NumClasses; i++) {
@@ -755,8 +756,10 @@ void Classify::InitAdaptedClass(TBLOB *Blob,
   if (classify_learning_debug_level >= 1) {
     tprintf("Added new class '%s' with class id %d and %d protos.\n",
             unicharset.id_to_unichar(ClassId), ClassId, NumFeatures);
+#ifndef GRAPHICS_DISABLED
     if (classify_learning_debug_level > 1)
       DisplayAdaptedChar(Blob, IClass);
+#endif
   }
 
   if (IsEmptyAdaptedClass(Class))
@@ -921,8 +924,10 @@ void Classify::AdaptToChar(TBLOB* Blob, CLASS_ID ClassId, int FontinfoId,
       if (classify_learning_debug_level >= 1) {
         tprintf("Found poor match to temp config %d = %4.1f%%.\n",
                 int_result.config, int_result.rating * 100.0);
+#ifndef GRAPHICS_DISABLED
         if (classify_learning_debug_level > 2)
           DisplayAdaptedChar(Blob, IClass);
+#endif
       }
       NewTempConfigId =
           MakeNewTemporaryConfig(adaptive_templates, ClassId, FontinfoId,
@@ -943,8 +948,9 @@ void Classify::AdaptToChar(TBLOB* Blob, CLASS_ID ClassId, int FontinfoId,
   }
 }                                /* AdaptToChar */
 
-void Classify::DisplayAdaptedChar(TBLOB* blob, INT_CLASS_STRUCT* int_class) {
 #ifndef GRAPHICS_DISABLED
+
+void Classify::DisplayAdaptedChar(TBLOB* blob, INT_CLASS_STRUCT* int_class) {
   INT_FX_RESULT_STRUCT fx_info;
   GenericVector<INT_FEATURE_STRUCT> bl_features;
   TrainingSample* sample =
@@ -971,8 +977,9 @@ void Classify::DisplayAdaptedChar(TBLOB* blob, INT_CLASS_STRUCT* int_class) {
   }
 
   delete sample;
-#endif
 }
+
+#endif
 
 /**
  * This routine adds the result of a classification into
@@ -1376,7 +1383,9 @@ int Classify::CharNormTrainingSample(bool pruner_only,
     for (int i = 0; i < adapt_results->match.size(); i++) {
       results->push_back(adapt_results->match[i]);
     }
-    results->sort(&UnicharRating::SortDescendingRating);
+    if (results->size() > 1) {
+      results->sort(&UnicharRating::SortDescendingRating);
+    }
   }
   delete [] char_norm_array;
   delete adapt_results;
@@ -1766,7 +1775,7 @@ int Classify::MakeNewTemporaryConfig(ADAPT_TEMPLATES Templates,
   if (IClass->NumConfigs >= MAX_NUM_CONFIGS) {
     ++NumAdaptationsFailed;
     if (classify_learning_debug_level >= 1)
-      cprintf("Cannot make new temporary config: maximum number exceeded.\n");
+      tprintf("Cannot make new temporary config: maximum number exceeded.\n");
     return -1;
   }
 
@@ -1793,7 +1802,7 @@ int Classify::MakeNewTemporaryConfig(ADAPT_TEMPLATES Templates,
   if (MaxProtoId == NO_PROTO) {
     ++NumAdaptationsFailed;
     if (classify_learning_debug_level >= 1)
-      cprintf("Cannot make new temp protos: maximum number exceeded.\n");
+      tprintf("Cannot make new temp protos: maximum number exceeded.\n");
     return -1;
   }
 
@@ -1804,7 +1813,7 @@ int Classify::MakeNewTemporaryConfig(ADAPT_TEMPLATES Templates,
   copy_all_bits(TempProtoMask, Config->Protos, Config->ProtoVectorSize);
 
   if (classify_learning_debug_level >= 1)
-    cprintf("Making new temp config %d fontinfo id %d"
+    tprintf("Making new temp config %d fontinfo id %d"
             " using %d old and %d new protos.\n",
             ConfigId, Config->FontinfoId,
             NumOldProtos, MaxProtoId - OldMaxProtoId);
@@ -2146,6 +2155,8 @@ void Classify::SetAdaptiveThreshold(float Threshold) {
       ClipToRange<int>(255 * Threshold, 0, 255));
 }                              /* SetAdaptiveThreshold */
 
+#ifndef GRAPHICS_DISABLED
+
 /*---------------------------------------------------------------------------*/
 /**
  * This routine displays debug information for the best config
@@ -2159,7 +2170,6 @@ void Classify::SetAdaptiveThreshold(float Threshold) {
 void Classify::ShowBestMatchFor(int shape_id,
                                 const INT_FEATURE_STRUCT* features,
                                 int num_features) {
-#ifndef GRAPHICS_DISABLED
   uint32_t config_mask;
   if (UnusedClassIdIn(PreTrainedTemplates, shape_id)) {
     tprintf("No built-in templates for class/shape %d\n", shape_id);
@@ -2186,8 +2196,9 @@ void Classify::ShowBestMatchFor(int shape_id,
             classify_adapt_feature_threshold, matcher_debug_flags,
             matcher_debug_separate_windows);
   UpdateMatchDisplay();
-#endif  // GRAPHICS_DISABLED
 }                              /* ShowBestMatchFor */
+
+#endif // !GRAPHICS_DISABLED
 
 // Returns a string for the classifier class_id: either the corresponding
 // unicharset debug_str or the shape_table_ debug str.

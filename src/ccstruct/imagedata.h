@@ -20,9 +20,10 @@
 #define TESSERACT_IMAGE_IMAGEDATA_H_
 
 #include <mutex>                // for std::mutex
+#include <thread>               // for std::thread
 #include <tesseract/genericvector.h>      // for GenericVector, PointerVector, FileReader
 #include "points.h"             // for FCOORD
-#include <tesseract/strngs.h>             // for STRING
+#include <tesseract/strngs.h>   // for STRING
 
 class ScrollView;
 class TBOX;
@@ -209,8 +210,6 @@ class ImageData {
 
 // A collection of ImageData that knows roughly how much memory it is using.
 class DocumentData {
-  friend void* ReCachePagesFunc(void* data);
-
  public:
   explicit DocumentData(const STRING& name);
   ~DocumentData();
@@ -313,6 +312,9 @@ class DocumentData {
   // Mutex that protects other data members that callers want to access without
   // waiting for a load operation.
   mutable std::mutex general_mutex_;
+
+  // Thread which loads document.
+  std::thread thread;
 };
 
 // A collection of DocumentData that knows roughly how much memory it is using.

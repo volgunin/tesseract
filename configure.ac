@@ -124,29 +124,66 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-command-line-argument], [WERROR=-Werror=un
 
 ## Checks for supported compiler options.
 
-AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
-AM_CONDITIONAL([HAVE_AVX], ${avx})
-if $avx; then
-  AC_DEFINE([HAVE_AVX], [1], [Enable AVX instructions])
-fi
+AM_CONDITIONAL([HAVE_AVX], false)
+AM_CONDITIONAL([HAVE_AVX2], false)
+AM_CONDITIONAL([HAVE_FMA], false)
+AM_CONDITIONAL([HAVE_SSE4_1], false)
+AM_CONDITIONAL([HAVE_NEON], false)
 
-AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
-AM_CONDITIONAL([HAVE_AVX2], $avx2)
-if $avx2; then
-  AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
-fi
+case "${host_cpu}" in
 
-AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
-AM_CONDITIONAL([HAVE_FMA], $fma)
-if $fma; then
-  AC_DEFINE([HAVE_FMA], [1], [Enable FMA instructions])
-fi
+  *86*)
 
-AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
-AM_CONDITIONAL([HAVE_SSE4_1], $sse41)
-if $sse41; then
-  AC_DEFINE([HAVE_SSE4_1], [1], [Enable SSE 4.1 instructions])
-fi
+    AX_CHECK_COMPILE_FLAG([-mavx], [avx=true], [avx=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX], ${avx})
+    if $avx; then
+      AC_DEFINE([HAVE_AVX], [1], [Enable AVX instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-mavx2], [avx2=true], [avx2=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_AVX2], $avx2)
+    if $avx2; then
+      AC_DEFINE([HAVE_AVX2], [1], [Enable AVX2 instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-mfma], [fma=true], [fma=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_FMA], $fma)
+    if $fma; then
+      AC_DEFINE([HAVE_FMA], [1], [Enable FMA instructions])
+    fi
+
+    AX_CHECK_COMPILE_FLAG([-msse4.1], [sse41=true], [sse41=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_SSE4_1], $sse41)
+    if $sse41; then
+      AC_DEFINE([HAVE_SSE4_1], [1], [Enable SSE 4.1 instructions])
+    fi
+
+    ;;
+
+  aarch64)
+
+    # ARMv8 always has NEON and does not need special compiler flags.
+    AM_CONDITIONAL([HAVE_NEON], true)
+    AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
+    ;;
+
+  arm*)
+
+    AX_CHECK_COMPILE_FLAG([-mfpu=neon], [neon=true], [neon=false], [$WERROR])
+    AM_CONDITIONAL([HAVE_NEON], $neon)
+    if $neon; then
+      AC_DEFINE([HAVE_NEON], [1], [Enable NEON instructions])
+      NEON_CXXFLAGS="-mfpu=neon"
+      AC_SUBST([NEON_CXXFLAGS])
+    fi
+
+    ;;
+
+  *)
+
+    AC_MSG_WARN([No compiler options for $host_cpu])
+
+esac
 
 AX_CHECK_COMPILE_FLAG([-march=native], [arch_native=true], [arch_native=false], [$WERROR])
 AM_CONDITIONAL([MARCH_NATIVE_OPT], $arch_native)
@@ -338,23 +375,6 @@ else
     AM_CPPFLAGS="$AM_CPPFLAGS -O2 -DNDEBUG"
 fi
 
-# Always look into a "gnu" directory.
-curwd=`pwd`
-if test -d $curwd/gnu/include ; then
-   CPPFLAGS="$CPPFLAGS -I$curwd/gnu/include"
-fi
-if test -d $curwd/gnu/lib ; then
-   LDFLAGS="$LDFLAGS -L$curwd/gnu/lib"
-fi
-
-# ----------------------------------------
-# Additional checking of compiler characteristics
-# ----------------------------------------
-
-# Check Endianness. If Big Endian, this will define WORDS_BIGENDIAN
-AC_C_BIGENDIAN
-
-
 # ----------------------------------------
 # Init libtool
 # ----------------------------------------
@@ -405,18 +425,6 @@ AC_SEARCH_LIBS([pthread_create], [pthread])
 
 
 # ----------------------------------------
-# Checks for header files.
-# ----------------------------------------
-
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([sys/ipc.h sys/shm.h])
-AC_CHECK_HEADERS([limits.h malloc.h])
-# Enable use of system-defined bool type if available:
-AC_HEADER_STDBOOL
-
-# ----------------------------------------
 # Check for programs needed to build documentation.
 # ----------------------------------------
 
@@ -434,8 +442,6 @@ fi
 
 AC_CHECK_TYPES([wchar_t],,, [#include "wchar.h"])
 AC_CHECK_TYPES([long long int])
-AC_CHECK_TYPES([off_t],,, [#include "sys/types.h"])
-AC_CHECK_TYPES([mbstate_t],,, [#include "wchar.h"])
 
 # ----------------------------------------
 # Test auxiliary packages
